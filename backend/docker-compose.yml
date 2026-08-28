@@ -1,0 +1,30 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: campus-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "5435:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # backend:
+  #   build: .
+  #   container_name: campus-backend
+  #   ports:
+  #     - "${PORT}:${PORT}"
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+
+volumes:
+  mysql_data:
