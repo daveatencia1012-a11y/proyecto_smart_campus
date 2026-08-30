@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import Icon from "../Icon/Icon";
 
 const serviceRoutes = {
   Solicitudes: "/requests",
@@ -10,17 +11,17 @@ const serviceRoutes = {
 };
 
 function ServiceCard({ service }) {
-  const route = serviceRoutes[service.name] || "/services";
+  const route = `/services/${service.id}`;
 
   return (
     <article className="service-card">
       <div className="service-card__top">
         <span className="service-card__icon" aria-hidden="true">
-          {service.icon}
+          <Icon name={service.icon} size={21} />
         </span>
 
         <span className="service-card__arrow" aria-hidden="true">
-          ↗
+          <Icon name="arrowUpRight" size={17} />
         </span>
       </div>
 
@@ -34,7 +35,7 @@ function ServiceCard({ service }) {
 
       <Link className="service-card__link" to={route}>
         Ver servicio
-        <span aria-hidden="true">→</span>
+        <Icon name="arrowRight" size={17} />
       </Link>
     </article>
   );

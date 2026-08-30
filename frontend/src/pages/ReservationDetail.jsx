@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { reservations } from "../data/mockData";
 import useLocalStorage from "../hooks/useLocalStorage";
+import Icon from "../components/Icon/Icon";
 
 function ReservationDetail() {
   const { id } = useParams();
@@ -11,7 +12,7 @@ function ReservationDetail() {
     return (
       <main className="reservation-detail">
         <section className="reservation-detail__not-found panel">
-          <span>⌕</span>
+          <Icon name="search" size={24} />
           <h1>Reserva no encontrada</h1>
           <p>La reserva que buscas no existe o ya no está disponible.</p>
           <Link to="/reservations">Volver a reservas</Link>
@@ -23,7 +24,7 @@ function ReservationDetail() {
   return (
     <main className="reservation-detail">
       <Link className="reservation-detail__back" to="/reservations">
-        ← Volver a reservas
+        <><Icon name="arrowLeft" size={17} /> Volver a reservas</>
       </Link>
 
       <section className="reservation-detail__hero">

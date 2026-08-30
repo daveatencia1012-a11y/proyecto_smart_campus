@@ -1,9 +1,10 @@
+import Icon from "../Icon/Icon";
 function StatCard({ title, value, icon, detail, trend }) {
   return (
     <article className="stat-card">
       <div className="stat-card__top">
         <span className="stat-card__icon" aria-hidden="true">
-          {icon}
+          <Icon name={icon} size={21} />
         </span>
 
         {trend && (

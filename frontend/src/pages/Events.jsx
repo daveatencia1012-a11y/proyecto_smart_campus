@@ -2,13 +2,20 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { events as initialEvents } from "../data/mockData";
 import useLocalStorage from "../hooks/useLocalStorage";
+import Icon from "../components/Icon/Icon";
 
 const filters = ["TODOS", "PRÓXIMOS", "INSCRITOS"];
 
 function Events() {
-  const [events] = useLocalStorage("uajs_events", initialEvents);
+  const [events, setEvents] = useLocalStorage("uajs_events", initialEvents);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("TODOS");
+
+  const toggleInscription = (id) => {
+    setEvents((current) => current.map((item) =>
+      item.id === id ? { ...item, inscribed: !item.inscribed } : item
+    ));
+  };
 
   const filteredEvents = useMemo(() => {
     const term = search.toLowerCase().trim();
@@ -32,13 +39,13 @@ function Events() {
           <p>Consulta conferencias, seminarios, talleres y actividades institucionales disponibles.</p>
         </div>
         <Link className="service-page__hero-action" to="/events">
-          <span>◈</span> Explorar agenda
+          <Icon name="events" size={18} /> Explorar agenda
         </Link>
       </section>
 
       <section className="service-page__toolbar panel">
         <label className="service-page__search">
-          <span>⌕</span>
+          <Icon name="search" size={24} />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar eventos..." />
         </label>
         <div className="service-page__filters">
@@ -71,9 +78,13 @@ function Events() {
                 <h3>{event.title}</h3>
                 <p>{event.description}</p>
                 <div className="event-card__meta">
-                  <span>◷ {event.time}</span>
-                  <span>⌖ {event.location}</span>
+                  <span><Icon name="clock" size={16} /> {event.time}</span>
+                  <span><Icon name="location" size={16} /> {event.location}</span>
                 </div>
+                <button className="event-card__register" type="button" onClick={() => toggleInscription(event.id)}>
+                  <Icon name={event.inscribed ? "check" : "plus"} size={15} />
+                  {event.inscribed ? "Inscrito · cancelar" : "Inscribirme"}
+                </button>
               </div>
             </article>
           ))}

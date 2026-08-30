@@ -26,6 +26,7 @@ function ThemeProvider({ children }) {
   const value = useMemo(
     () => ({
       theme,
+      setTheme,
       toggleTheme: () => {
         setTheme((currentTheme) =>
           currentTheme === "light" ? "dark" : "light"

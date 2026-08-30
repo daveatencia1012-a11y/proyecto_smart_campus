@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
+import Icon from "../Icon/Icon";
 
 function RequestCard({ request, onDelete }) {
   return (
     <article className="request-card">
       <div className="request-card__icon" aria-hidden="true">
-        {request.type.includes("Reserva") ? "□" : "▤"}
+        <Icon name={request.type.includes("Reserva") ? "reservations" : "requests"} size={19} />
       </div>
 
       <div className="request-card__content">
@@ -23,9 +24,13 @@ function RequestCard({ request, onDelete }) {
           </span>
         </div>
 
-        <p className="request-card__description">
-          {request.description}
-        </p>
+        <p className="request-card__description">{request.description}</p>
+        {(request.dependency || request.priority) && (
+          <div className="request-card__meta">
+            {request.dependency && <span>{request.dependency}</span>}
+            {request.priority && <span>Prioridad {request.priority}</span>}
+          </div>
+        )}
       </div>
 
       <div className="request-card__actions">
@@ -34,7 +39,7 @@ function RequestCard({ request, onDelete }) {
           to={`/requests/${request.id}`}
           aria-label={`Ver ${request.type}`}
         >
-          →
+          <Icon name="arrowRight" size={17} />
         </Link>
 
         {onDelete && (
@@ -43,7 +48,7 @@ function RequestCard({ request, onDelete }) {
             type="button"
             onClick={() => onDelete(request.id)}
           >
-            ×
+            <Icon name="close" size={18} />
           </button>
         )}
       </div>

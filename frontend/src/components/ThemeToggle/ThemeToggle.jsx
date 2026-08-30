@@ -1,4 +1,5 @@
 import useTheme from "../../hooks/useTheme";
+import Icon from "../Icon/Icon";
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -13,7 +14,7 @@ function ThemeToggle() {
       title={isDark ? "Modo claro" : "Modo oscuro"}
     >
       <span className="theme-toggle__icon" aria-hidden="true">
-        {isDark ? "☀" : "☾"}
+        <Icon name={isDark ? "sun" : "moon"} size={18} />
       </span>
 
       <span className="theme-toggle__label">
