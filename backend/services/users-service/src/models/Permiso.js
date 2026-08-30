@@ -12,3 +12,6 @@ export async function listAll() {
   const [rows] = await db.query('SELECT id, rol, recurso, accion FROM permisos');
   return rows;
 }
+
+const Permiso = { findByRole, listAll };
+export default Permiso;
