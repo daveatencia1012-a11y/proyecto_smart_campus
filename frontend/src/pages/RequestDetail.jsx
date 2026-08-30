@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { requests as initialRequests } from "../data/mockData";
 import useLocalStorage from "../hooks/useLocalStorage";
+import Icon from "../components/Icon/Icon";
 
 function RequestDetail() {
   const { id } = useParams();
@@ -11,7 +12,7 @@ function RequestDetail() {
     return (
       <main className="request-detail">
         <section className="request-detail__not-found panel">
-          <span>⌕</span>
+          <Icon name="search" size={24} />
           <h1>Solicitud no encontrada</h1>
           <p>La solicitud que intentas consultar no existe en los datos de demostración.</p>
           <Link to="/requests">Volver a solicitudes</Link>
@@ -23,7 +24,7 @@ function RequestDetail() {
   return (
     <main className="request-detail">
       <Link className="request-detail__back" to="/requests">
-        ← Volver a solicitudes
+        <><Icon name="arrowLeft" size={17} /> Volver a solicitudes</>
       </Link>
 
       <section className="request-detail__hero">
@@ -51,6 +52,18 @@ function RequestDetail() {
             <div>
               <span>Número</span>
               <strong>#{request.id}</strong>
+            </div>
+            <div>
+              <span>Dependencia</span>
+              <strong>{request.dependency || "Por definir"}</strong>
+            </div>
+            <div>
+              <span>Prioridad</span>
+              <strong>{request.priority || "MEDIA"}</strong>
+            </div>
+            <div>
+              <span>Responsable</span>
+              <strong>{request.responsible || "Pendiente de asignación"}</strong>
             </div>
           </div>
         </article>

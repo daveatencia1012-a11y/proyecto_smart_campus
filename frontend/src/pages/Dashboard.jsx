@@ -1,14 +1,20 @@
 import { useMemo, useState } from "react";
+import Icon from "../components/Icon/Icon";
 
-import { services, requests, stats } from "../data/mockData";
+import { services, requests as initialRequests, reservations as initialReservations, notifications as initialNotifications, events as initialEvents } from "../data/mockData";
 
 import ServiceCard from "../components/ServiceCard/ServiceCard";
 import StatCard from "../components/StatCard/StatCard";
 import RequestCard from "../components/RequestCard/RequestCard";
+import useLocalStorage from "../hooks/useLocalStorage";
 
 function Dashboard() {
   const [search, setSearch] = useState("");
   const [period, setPeriod] = useState("Este mes");
+  const [requests] = useLocalStorage("uajs_requests", initialRequests);
+  const [reservations] = useLocalStorage("uajs_reservations", initialReservations);
+  const [notifications] = useLocalStorage("uajs_notifications", initialNotifications);
+  const [events] = useLocalStorage("uajs_events", initialEvents);
 
   const filteredServices = useMemo(
     () =>
@@ -20,12 +26,15 @@ function Dashboard() {
     [search]
   );
 
-  const activityTotal =
-    stats.requests + stats.reservations + stats.events;
+  const stats = {
+    requests: requests.length,
+    reservations: reservations.filter((item) => item.status !== "CANCELADA").length,
+    notifications: notifications.filter((item) => !item.read).length,
+    events: events.filter((item) => item.status !== "FINALIZADO").length,
+  };
 
-  const completionPercentage = Math.round(
-    (stats.requests / Math.max(activityTotal, 1)) * 100
-  );
+  const activityTotal = stats.requests + stats.reservations + stats.events;
+  const completionPercentage = Math.round((requests.filter((item) => item.status === "RESUELTA" || item.status === "CERRADA").length / Math.max(stats.requests, 1)) * 100);
 
   return (
     <main className="dashboard">
@@ -70,12 +79,12 @@ function Dashboard() {
           </span>
 
           <h2>
-            Buenos días, Ismael <span>👋</span>
+            Buenos días, Ismael <Icon name="spark" size={18} />
           </h2>
         </div>
 
         <label className="dashboard__search">
-          <span aria-hidden="true">⌕</span>
+          <Icon name="search" size={18} />
 
           <input
             type="search"
@@ -91,7 +100,7 @@ function Dashboard() {
         <StatCard
           title="Solicitudes"
           value={stats.requests}
-          icon="▤"
+          icon="requests"
           trend="+12%"
           detail="este mes"
         />
@@ -99,7 +108,7 @@ function Dashboard() {
         <StatCard
           title="Reservas"
           value={stats.reservations}
-          icon="□"
+          icon="reservations"
           trend="+8%"
           detail="este mes"
         />
@@ -107,7 +116,7 @@ function Dashboard() {
         <StatCard
           title="Notificaciones"
           value={stats.notifications}
-          icon="♧"
+          icon="notifications"
           trend="3 nuevas"
           detail="sin leer"
         />
@@ -115,7 +124,7 @@ function Dashboard() {
         <StatCard
           title="Eventos"
           value={stats.events}
-          icon="◈"
+          icon="events"
           trend="Próximos"
           detail="disponibles"
         />
@@ -144,7 +153,7 @@ function Dashboard() {
               ))
             ) : (
               <div className="dashboard__empty">
-                <span>⌕</span>
+                <Icon name="search" size={24} />
                 <strong>No encontramos servicios</strong>
                 <p>Prueba con otro término de búsqueda.</p>
               </div>
@@ -160,7 +169,7 @@ function Dashboard() {
             </div>
 
             <span className="panel__round-button" aria-hidden="true">
-              ↗
+              <Icon name="arrowUpRight" size={17} />
             </span>
           </div>
 
@@ -207,7 +216,7 @@ function Dashboard() {
             </div>
 
             <span className="panel__round-button" aria-hidden="true">
-              ↗
+              <Icon name="arrowUpRight" size={17} />
             </span>
           </div>
 

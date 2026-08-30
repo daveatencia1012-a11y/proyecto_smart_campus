@@ -1,3 +1,4 @@
+import Icon from "../Icon/Icon";
 import { Link } from "react-router-dom";
 
 const statusClass = {
@@ -33,8 +34,8 @@ function ReservationCard({ reservation, onCancel }) {
         </div>
 
         <div className="reservation-card__meta">
-          <span>◷ {reservation.startTime} – {reservation.endTime}</span>
-          <span>⌖ {reservation.location}</span>
+          <span><Icon name="clock" size={16} /> {reservation.startTime} – {reservation.endTime}</span>
+          <span><Icon name="location" size={16} /> {reservation.location}</span>
         </div>
 
         <p>{reservation.description}</p>

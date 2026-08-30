@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { notifications as initialNotifications } from "../data/mockData";
 import useLocalStorage from "../hooks/useLocalStorage";
+import Icon from "../components/Icon/Icon";
 
 const filters = ["TODAS", "NO LEÍDAS", "LEÍDAS"];
 
@@ -25,13 +26,13 @@ function Notifications() {
           <h1>Notificaciones</h1>
           <p>Consulta cambios de estado, confirmaciones, alertas y comunicaciones relevantes para tu experiencia universitaria.</p>
         </div>
-        <button className="service-page__hero-action" type="button" onClick={markAll}>✓ Marcar todas como leídas</button>
+        <button className="service-page__hero-action" type="button" onClick={markAll}><Icon name="check" size={17} /> Marcar todas como leídas</button>
       </section>
 
       <section className="notifications-page__summary">
-        <article className="notification-summary panel"><span>🔔</span><div><strong>{unread}</strong><p>sin leer</p></div></article>
-        <article className="notification-summary panel"><span>✓</span><div><strong>{notifications.length}</strong><p>notificaciones</p></div></article>
-        <article className="notification-summary panel"><span>⚡</span><div><strong>24h</strong><p>actividad reciente</p></div></article>
+        <article className="notification-summary panel"><Icon name="notifications" size={22} /><div><strong>{unread}</strong><p>sin leer</p></div></article>
+        <article className="notification-summary panel"><Icon name="check" size={17} /><div><strong>{notifications.length}</strong><p>notificaciones</p></div></article>
+        <article className="notification-summary panel"><Icon name="spark" size={22} /><div><strong>24h</strong><p>actividad reciente</p></div></article>
       </section>
 
       <section className="service-page__toolbar panel">
@@ -51,7 +52,7 @@ function Notifications() {
         <div className="notifications-page__list">
           {filtered.map((item) => (
             <article className={`notification-card panel ${item.read ? "" : "notification-card--unread"}`} key={item.id}>
-              <span className={`notification-card__icon notification-card__icon--${item.type}`}>{item.icon}</span>
+              <span className={`notification-card__icon notification-card__icon--${item.type}`}><Icon name={item.icon} size={19} /></span>
               <div className="notification-card__content">
                 <div className="notification-card__top"><h3>{item.title}</h3>{!item.read && <span className="notification-card__dot" />}</div>
                 <p>{item.message}</p>

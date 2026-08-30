@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { resources as initialResources } from "../data/mockData";
 import useLocalStorage from "../hooks/useLocalStorage";
+import Icon from "../components/Icon/Icon";
 
 const filters = ["TODOS", "DISPONIBLE", "EN USO", "MANTENIMIENTO"];
 
@@ -26,12 +27,12 @@ function Resources() {
           <h1>Recursos disponibles</h1>
           <p>Consulta equipos, salas, laboratorios y espacios académicos registrados en Smart Campus.</p>
         </div>
-        <Link className="service-page__hero-action" to="/reservations"><span>＋</span> Reservar recurso</Link>
+        <Link className="service-page__hero-action" to="/reservations"><Icon name="plus" size={18} /> Reservar recurso</Link>
       </section>
 
       <section className="service-page__toolbar panel">
         <label className="service-page__search">
-          <span>⌕</span>
+          <Icon name="search" size={24} />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre, código o ubicación..." />
         </label>
         <div className="service-page__filters">
@@ -53,7 +54,7 @@ function Resources() {
         <div className="resources-page__grid">
           {filtered.map((resource) => (
             <article className="resource-card panel" key={resource.id}>
-              <div className="resource-card__icon">{resource.icon}</div>
+              <div className="resource-card__icon"><Icon name={resource.icon} size={22} /></div>
               <div className="resource-card__body">
                 <div className="resource-card__top">
                   <span className="resource-card__code">{resource.code}</span>
@@ -65,7 +66,7 @@ function Resources() {
                 <p>{resource.type} · {resource.location}</p>
                 <div className="resource-card__footer">
                   <span>{resource.description}</span>
-                  {resource.status === "DISPONIBLE" ? <Link to="/reservations">Reservar →</Link> : <span className="resource-card__disabled">No disponible</span>}
+                  {resource.status === "DISPONIBLE" ? <Link to="/reservations">Reservar <Icon name="arrowRight" size={16} /></Link> : <span className="resource-card__disabled">No disponible</span>}
                 </div>
               </div>
             </article>

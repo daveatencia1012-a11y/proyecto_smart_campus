@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
+import Icon from "../components/Icon/Icon";
 
-import { reservations as initialReservations } from "../data/mockData";
+import { reservations as initialReservations, resources } from "../data/mockData";
 import ReservationCard from "../components/ReservationCard/ReservationCard";
 import useLocalStorage from "../hooks/useLocalStorage";
 
@@ -49,7 +50,17 @@ function Reservations() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    if (name === "resource") {
+      const selected = resources.find((item) => item.name === value);
+      setForm((current) => ({
+        ...current,
+        resource: value,
+        type: selected?.type?.replace(" académica", "").replace(" audiovisual", "") || current.type,
+        location: selected?.location || current.location,
+      }));
+    } else {
+      setForm((current) => ({ ...current, [name]: value }));
+    }
     setError("");
   };
 
@@ -69,6 +80,21 @@ function Reservations() {
 
     if (form.endTime <= form.startTime) {
       setError("La hora de finalización debe ser posterior a la hora de inicio.");
+      return;
+    }
+
+    const todayIso = new Date().toISOString().slice(0, 10);
+    if (form.date < todayIso) {
+      setError("Selecciona una fecha igual o posterior a hoy.");
+      return;
+    }
+
+    const conflicting = reservations.some((item) => {
+      if (item.status === "CANCELADA" || item.resource !== form.resource || new Date(`${item.date.split("/").reverse().join("-")}T00:00:00`).toISOString().slice(0, 10) !== form.date) return false;
+      return form.startTime < item.endTime && form.endTime > item.startTime;
+    });
+    if (conflicting) {
+      setError("El recurso ya tiene una reserva en ese horario. Elige otra hora o recurso.");
       return;
     }
 
@@ -119,7 +145,7 @@ function Reservations() {
             setError("");
           }}
         >
-          <span aria-hidden="true">＋</span>
+          <Icon name="plus" size={18} />
           Nueva reserva
         </button>
       </section>
@@ -138,7 +164,7 @@ function Reservations() {
               onClick={() => setIsFormOpen(false)}
               aria-label="Cerrar formulario"
             >
-              ×
+              <Icon name="close" size={18} />
             </button>
           </div>
 
@@ -146,12 +172,12 @@ function Reservations() {
             <div className="reservations-form__grid">
               <label>
                 <span>Recurso o espacio</span>
-                <input
-                  name="resource"
-                  value={form.resource}
-                  onChange={handleChange}
-                  placeholder="Ej. Sala 305"
-                />
+                <select name="resource" value={form.resource} onChange={handleChange}>
+                  <option value="">Selecciona un recurso</option>
+                  {resources.filter((item) => item.status === "DISPONIBLE").map((item) => (
+                    <option key={item.id} value={item.name}>{item.name} · {item.location}</option>
+                  ))}
+                </select>
               </label>
 
               <label>
@@ -181,7 +207,8 @@ function Reservations() {
                   name="location"
                   value={form.location}
                   onChange={handleChange}
-                  placeholder="Ej. Bloque A · Segundo piso"
+                  placeholder="Se completa al seleccionar el recurso"
+                  readOnly
                 />
               </label>
 
@@ -226,7 +253,7 @@ function Reservations() {
 
       <section className="reservations-page__toolbar panel">
         <div className="reservations-page__search">
-          <span aria-hidden="true">⌕</span>
+          <Icon name="search" size={18} />
           <input
             type="search"
             placeholder="Buscar por recurso, tipo o ubicación..."
@@ -277,7 +304,7 @@ function Reservations() {
           </div>
         ) : (
           <div className="reservations-page__empty panel">
-            <span>◷</span>
+            <Icon name="clock" size={18} />
             <h3>No encontramos reservas</h3>
             <p>Prueba con otro filtro o registra una nueva reserva.</p>
             <button

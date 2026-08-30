@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useTheme from "../hooks/useTheme";
 import heroImage from "../assets/hero.png";
+import uajsLogo from "../assets/uajs-logo.png";
+import Icon from "../components/Icon/Icon";
+import LoadingScreen from "../components/LoadingScreen/LoadingScreen";
 
 function Login() {
   const navigate = useNavigate();
@@ -10,12 +13,14 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEnteringCampus, setIsEnteringCampus] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
 
   useEffect(() => {
     if (localStorage.getItem("uniajs-smart-campus-auth") === "true") {
-      navigate("/dashboard", { replace: true });
+      const role = localStorage.getItem("uniajs-smart-campus-role") || "student";
+      navigate(role === "admin" ? "/admin" : "/dashboard", { replace: true });
     }
   }, [navigate]);
 
@@ -48,6 +53,8 @@ function Login() {
 
     window.setTimeout(() => {
       localStorage.setItem("uniajs-smart-campus-auth", "true");
+      const isAdmin = /(^|[._-])admin([@._-]|$)/i.test(email) || email.toLowerCase().startsWith("admin@");
+      localStorage.setItem("uniajs-smart-campus-role", isAdmin ? "admin" : "student");
 
       if (remember) {
         localStorage.setItem("uniajs-smart-campus-user", email);
@@ -55,10 +62,19 @@ function Login() {
         localStorage.removeItem("uniajs-smart-campus-user");
       }
 
-      const destination = location.state?.from?.pathname || "/dashboard";
-      navigate(destination, { replace: true });
-    }, 700);
+      setIsLoading(false);
+      setIsEnteringCampus(true);
+
+      window.setTimeout(() => {
+        const destination = location.state?.from?.pathname || "/dashboard";
+        navigate(destination, { replace: true });
+      }, 2800);
+    }, 650);
   };
+
+  if (isEnteringCampus) {
+    return <LoadingScreen />;
+  }
 
   return (
     <main className="login-page">
@@ -68,11 +84,7 @@ function Login() {
 
         <div className="login-page__visual-top">
           <div className="login-brand">
-            <span className="login-brand__mark">U</span>
-            <span>
-              <strong>Uniajs</strong>
-              <small>SMART CAMPUS</small>
-            </span>
+            <img className="login-brand__logo" src={uajsLogo} alt="Corporación Universitaria Antonio José de Sucre" />
           </div>
 
           <button
@@ -81,7 +93,7 @@ function Login() {
             onClick={toggleTheme}
             aria-label={`Cambiar a modo ${theme === "light" ? "oscuro" : "claro"}`}
           >
-            <span>{theme === "light" ? "☾" : "☀"}</span>
+            <Icon name={theme === "light" ? "moon" : "sun"} size={18} />
             {theme === "light" ? "Modo oscuro" : "Modo claro"}
           </button>
         </div>
@@ -128,11 +140,7 @@ function Login() {
       <section className="login-page__form-area">
         <div className="login-form-wrap">
           <div className="login-mobile-brand">
-            <span className="login-brand__mark">U</span>
-            <span>
-              <strong>Uniajs</strong>
-              <small>SMART CAMPUS</small>
-            </span>
+            <img className="login-brand__logo" src={uajsLogo} alt="Corporación Universitaria Antonio José de Sucre" />
           </div>
 
           <div className="login-form__header">
@@ -206,13 +214,13 @@ function Login() {
                   <span className="login-submit__spinner" /> Verificando acceso...
                 </>
               ) : (
-                <>Iniciar sesión <span>→</span></>
+                <>Iniciar sesión <Icon name="arrowRight" size={17} /></>
               )}
             </button>
           </form>
 
           <div className="login-security">
-            <span>⌁</span>
+            <Icon name="shield" size={20} />
             <p><strong>Acceso protegido</strong><br />Tus credenciales serán gestionadas de forma segura.</p>
           </div>
 
