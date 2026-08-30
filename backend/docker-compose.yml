@@ -3,28 +3,150 @@ services:
     image: mysql:8.0
     container_name: campus-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-campus_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-smart_campus}
     ports:
-      - "5435:3306"
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # backend:
-  #   build: .
-  #   container_name: campus-backend
-  #   ports:
-  #     - "${PORT}:${PORT}"
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
+  users-service:
+    build:
+      context: ./services/users-service
+      dockerfile: dockerfile
+    container_name: campus-users-service
+    ports:
+      - "3201:3201"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-campus_password}
+      DB_NAME: users_db
+      JWT_SECRET: ${JWT_SECRET:-smart_campus_jwt_secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      PORT: 3201
+      SERVICE_URL: http://localhost:3201
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  requests-service:
+    build:
+      context: ./services/requests-service
+      dockerfile: dockerfile
+    container_name: campus-requests-service
+    ports:
+      - "3202:3202"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-campus_password}
+      DB_NAME: requests_db
+      JWT_SECRET: ${JWT_SECRET:-smart_campus_jwt_secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      PORT: 3202
+      SERVICE_URL: http://localhost:3202
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  reservations-service:
+    build:
+      context: ./services/reservations-service
+      dockerfile: dockerfile
+    container_name: campus-reservations-service
+    ports:
+      - "3203:3203"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-campus_password}
+      DB_NAME: reservations_db
+      JWT_SECRET: ${JWT_SECRET:-smart_campus_jwt_secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      PORT: 3203
+      SERVICE_URL: http://localhost:3203
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  resources-service:
+    build:
+      context: ./services/resources-service
+      dockerfile: dockerfile
+    container_name: campus-resources-service
+    ports:
+      - "3204:3204"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-campus_password}
+      DB_NAME: resources_db
+      JWT_SECRET: ${JWT_SECRET:-smart_campus_jwt_secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      PORT: 3204
+      SERVICE_URL: http://localhost:3204
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  events-service:
+    build:
+      context: ./services/events-service
+      dockerfile: dockerfile
+    container_name: campus-events-service
+    ports:
+      - "3205:3205"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-campus_password}
+      DB_NAME: events_db
+      JWT_SECRET: ${JWT_SECRET:-smart_campus_jwt_secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      PORT: 3205
+      SERVICE_URL: http://localhost:3205
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  notifications-service:
+    build:
+      context: ./services/notifications-service
+      dockerfile: dockerfile
+    container_name: campus-notifications-service
+    ports:
+      - "3206:3206"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-campus_password}
+      DB_NAME: notifications_db
+      JWT_SECRET: ${JWT_SECRET:-smart_campus_jwt_secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      PORT: 3206
+      SERVICE_URL: http://localhost:3206
+    depends_on:
+      mysql:
+        condition: service_healthy
 
 volumes:
   mysql_data:
