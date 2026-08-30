@@ -55,3 +55,6 @@ export async function softDelete(id) {
 }
 
 export { ROLES };
+
+const User = { findByEmail, findById, list, create, update, softDelete };
+export default User;
