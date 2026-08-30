@@ -12,10 +12,14 @@ build/
 
 # Logs
 *.log
+npm-debug.log*
+pnpm-debug.log*
 
-# IDE
-.vscode/
-.idea/
+# Coverage
+coverage/
+
+# Docker
+docker-compose.override.yml
 
 # Misc
 .cache/
