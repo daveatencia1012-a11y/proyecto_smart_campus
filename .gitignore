@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Documentación interna / archivos auxiliares de commits
+COMMITS.md
+COMMITS_SIMULADOS.md
+ADMIN_DEMO.md
