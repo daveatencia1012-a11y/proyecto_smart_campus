@@ -1,50 +1,29 @@
-# Dependencies
-frontend/node_modules
-
-node_modules/
-.pnp
-.pnp.js
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Build outputs
-dist/
-build/
-out/
-
 # Logs
+logs
 *.log
 npm-debug.log*
-pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 lerna-debug.log*
 
-# Coverage
-coverage/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Local config
+node_modules
+dist
+dist-ssr
 *.local
-*.bak
 
-# Docker
-docker-compose.override.yml
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Misc
-.cache/
-
-.kilo
-.kilo/*
+# Documentación interna / archivos auxiliares de commits
+COMMITS.md
+COMMITS_SIMULADOS.md
+ADMIN_DEMO.md
