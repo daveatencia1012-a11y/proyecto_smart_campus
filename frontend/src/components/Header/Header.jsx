@@ -17,18 +17,23 @@ function Header({ onMenuClick }) {
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("uajs-smart-campus-auth");
-    localStorage.removeItem("uniajs-smart-campus-auth");
-    localStorage.removeItem("uajs-smart-campus-user");
-    localStorage.removeItem("uniajs-smart-campus-user");
-    localStorage.removeItem("uniajs-smart-campus-role");
+   const handleLogout = () => {
+    localStorage.removeItem("smart-campus-token");
+    localStorage.removeItem("smart-campus-user");
+    localStorage.removeItem("smart-campus-role");
     navigate("/login", { replace: true });
   };
 
-  const role = localStorage.getItem("uniajs-smart-campus-role") || "student";
+  const role = localStorage.getItem("smart-campus-role") || "student";
   const isAdmin = role === "admin";
-  const storedUser = localStorage.getItem("uniajs-smart-campus-user") || "Ismael";
+    const storedUser = (() => {
+    try {
+      const raw = localStorage.getItem("smart-campus-user");
+      return raw ? JSON.parse(raw).nombre : "Usuario";
+    } catch {
+      return "Usuario";
+    }
+  })();
   const displayName = storedUser.includes("@") ? storedUser.split("@")[0] : storedUser;
   const initials = displayName.split(/[ ._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join("") || "IS";
 
