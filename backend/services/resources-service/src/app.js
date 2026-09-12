@@ -14,6 +14,10 @@ app.use(express.json());
 
 app.use('/api/recursos', recursosRoutes);
 app.use('/api/tipos', tiposRoutes);
+//Nuevo
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'resources-service' });
+});
 
 app.use(errorHandler);
 

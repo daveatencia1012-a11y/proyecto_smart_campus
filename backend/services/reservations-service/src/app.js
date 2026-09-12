@@ -11,6 +11,10 @@ app.use(express.json());
 
 app.use('/api/reservas', reservasRoutes);
 app.use('/api/disponibilidad', disponibilidadRoutes);
+//Nuevo
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'reservations-service' });
+});
 
 app.use(errorHandler);
 

@@ -11,6 +11,10 @@ app.use(express.json());
 
 app.use('/api/eventos', eventosRoutes);
 app.use('/api/tipos-evento', tiposEventoRoutes);
+//Nuevo
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'events-service' });
+});
 
 app.use(errorHandler);
 
