@@ -12,7 +12,7 @@ function ReservationCard({ reservation, onCancel }) {
     <article className="reservation-card panel">
       <div className="reservation-card__date">
         <span>{reservation.date.split("/")[0]}</span>
-        <small>AGO</small>
+        <small>{["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"][parseInt(reservation.date.split("/")[1], 10) - 1]}</small>
       </div>
 
       <div className="reservation-card__main">

@@ -1,20 +1,45 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { reservations } from "../data/mockData";
-import useLocalStorage from "../hooks/useLocalStorage";
+import { getReservationById } from "../services/reservationsService";
 import Icon from "../components/Icon/Icon";
 
 function ReservationDetail() {
   const { id } = useParams();
-  const [storedReservations] = useLocalStorage("uajs_reservations", reservations);
-  const reservation = storedReservations.find((item) => String(item.id) === id);
+  const [reservation, setReservation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (!reservation) {
+  useEffect(() => {
+    async function loadReservation() {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await getReservationById(id);
+        setReservation(data);
+      } catch (err) {
+        setError(err.message || "Error al cargar la reserva.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadReservation();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <main className="reservation-detail">
+        <p>Cargando reserva...</p>
+      </main>
+    );
+  }
+
+  if (error || !reservation) {
     return (
       <main className="reservation-detail">
         <section className="reservation-detail__not-found panel">
           <Icon name="search" size={24} />
           <h1>Reserva no encontrada</h1>
-          <p>La reserva que buscas no existe o ya no está disponible.</p>
+          <p>{error || "La reserva que buscas no existe o ya no está disponible."}</p>
           <Link to="/reservations">Volver a reservas</Link>
         </section>
       </main>
@@ -31,9 +56,8 @@ function ReservationDetail() {
         <div>
           <span className="reservations-page__eyebrow">DETALLE DE RESERVA</span>
           <h1>{reservation.resource}</h1>
-          <p>{reservation.description}</p>
+          <p>Reserva #{reservation.id}</p>
         </div>
-
         <span className="reservation-detail__status">
           {reservation.status}
         </span>
@@ -69,14 +93,13 @@ function ReservationDetail() {
           <h2>Estado actual</h2>
           <p>
             Esta reserva se encuentra en estado <strong>{reservation.status}</strong>.
-            Cuando conectemos la API, este estado se actualizará con información real.
           </p>
 
           <div className="reservation-detail__timeline">
             <div className="reservation-detail__step reservation-detail__step--done">
               <span />
               <div>
-                <strong>Solicitud registrada</strong>
+                <strong>Reserva registrada</strong>
                 <p>La reserva fue creada correctamente.</p>
               </div>
             </div>
