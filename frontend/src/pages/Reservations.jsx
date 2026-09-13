@@ -1,129 +1,100 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Icon from "../components/Icon/Icon";
-
-import { reservations as initialReservations, resources } from "../data/mockData";
 import ReservationCard from "../components/ReservationCard/ReservationCard";
-import useLocalStorage from "../hooks/useLocalStorage";
+import { getReservations, createReservation, cancelReservation } from "../services/reservationsService";
+import { getResources } from "../services/resourcesService";
 
 const filters = ["TODAS", "CONFIRMADA", "PENDIENTE", "FINALIZADA", "CANCELADA"];
 
 const emptyForm = {
-  resource: "",
-  type: "Sala",
-  date: "",
-  startTime: "",
-  endTime: "",
-  location: "",
+  recurso_id: "",
+  fecha: "",
+  hora_inicio: "",
+  hora_fin: "",
 };
 
 function Reservations() {
-  const [reservations, setReservations] = useLocalStorage(
-    "uajs_reservations",
-    initialReservations
-  );
+  const [reservations, setReservations] = useState([]);
+  const [resourcesList, setResourcesList] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("TODAS");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      setLoading(true);
+      setError("");
+      const [reservasData, recursosData] = await Promise.all([
+        getReservations(),
+        getResources(),
+      ]);
+      setReservations(reservasData);
+      setResourcesList(recursosData);
+    } catch (err) {
+      setError(err.message || "Error al cargar las reservas.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const filteredReservations = useMemo(() => {
     const normalizedSearch = search.toLowerCase().trim();
-
     return reservations.filter((reservation) => {
-      const matchesFilter =
-        filter === "TODAS" || reservation.status === filter;
-
-      const searchable = [
-        reservation.resource,
-        reservation.type,
-        reservation.location,
-        reservation.description,
-        reservation.id,
-      ]
-        .join(" ")
-        .toLowerCase();
-
+      const matchesFilter = filter === "TODAS" || reservation.status === filter;
+      const searchable = `${reservation.resource} ${reservation.type} ${reservation.location} ${reservation.date}`.toLowerCase();
       return matchesFilter && searchable.includes(normalizedSearch);
     });
   }, [filter, reservations, search]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    if (name === "resource") {
-      const selected = resources.find((item) => item.name === value);
-      setForm((current) => ({
-        ...current,
-        resource: value,
-        type: selected?.type?.replace(" académica", "").replace(" audiovisual", "") || current.type,
-        location: selected?.location || current.location,
-      }));
-    } else {
-      setForm((current) => ({ ...current, [name]: value }));
-    }
+    setForm((current) => ({ ...current, [name]: value }));
     setError("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (
-      !form.resource.trim() ||
-      !form.date ||
-      !form.startTime ||
-      !form.endTime ||
-      !form.location.trim()
-    ) {
+    if (!form.recurso_id || !form.fecha || !form.hora_inicio || !form.hora_fin) {
       setError("Completa todos los campos para registrar la reserva.");
       return;
     }
-
-    if (form.endTime <= form.startTime) {
-      setError("La hora de finalización debe ser posterior a la hora de inicio.");
+    if (form.hora_inicio >= form.hora_fin) {
+      setError("La hora de inicio debe ser menor que la hora de fin.");
       return;
     }
 
-    const todayIso = new Date().toISOString().slice(0, 10);
-    if (form.date < todayIso) {
-      setError("Selecciona una fecha igual o posterior a hoy.");
-      return;
+    try {
+      setError("");
+      await createReservation({
+        recurso_id: Number(form.recurso_id),
+        fecha: form.fecha,
+        hora_inicio: form.hora_inicio,
+        hora_fin: form.hora_fin,
+      });
+      setForm(emptyForm);
+      setIsFormOpen(false);
+      loadData();
+    } catch (err) {
+      setError(err.message || "Error al crear la reserva.");
     }
-
-    const conflicting = reservations.some((item) => {
-      if (item.status === "CANCELADA" || item.resource !== form.resource || new Date(`${item.date.split("/").reverse().join("-")}T00:00:00`).toISOString().slice(0, 10) !== form.date) return false;
-      return form.startTime < item.endTime && form.endTime > item.startTime;
-    });
-    if (conflicting) {
-      setError("El recurso ya tiene una reserva en ese horario. Elige otra hora o recurso.");
-      return;
-    }
-
-    const newReservation = {
-      id: Date.now(),
-      resource: form.resource.trim(),
-      type: form.type,
-      date: new Date(`${form.date}T00:00:00`).toLocaleDateString("es-CO"),
-      startTime: form.startTime,
-      endTime: form.endTime,
-      location: form.location.trim(),
-      status: "PENDIENTE",
-      description: "Reserva registrada desde Uniajs Smart Campus.",
-    };
-
-    setReservations((current) => [newReservation, ...current]);
-    setForm(emptyForm);
-    setError("");
-    setIsFormOpen(false);
   };
 
-  const handleCancel = (id) => {
-    setReservations((current) =>
-      current.map((reservation) =>
-        reservation.id === id
-          ? { ...reservation, status: "CANCELADA" }
-          : reservation
-      )
-    );
+  const handleCancel = async (id) => {
+    try {
+      await cancelReservation(id);
+      setReservations((current) =>
+        current.map((r) => (r.id === id ? { ...r, status: "CANCELADA" } : r))
+      );
+    } catch (err) {
+      setError(err.message || "Error al cancelar la reserva.");
+    }
   };
 
   return (
@@ -132,19 +103,9 @@ function Reservations() {
         <div>
           <span className="reservations-page__eyebrow">GESTIÓN UNIVERSITARIA</span>
           <h1>Mis reservas</h1>
-          <p>
-            Gestiona salas, laboratorios, equipos y espacios académicos desde un solo lugar.
-          </p>
+          <p>Gestiona salas, laboratorios, equipos y espacios académicos desde un solo lugar.</p>
         </div>
-
-        <button
-          className="reservations-page__new-button"
-          type="button"
-          onClick={() => {
-            setIsFormOpen((open) => !open);
-            setError("");
-          }}
-        >
+        <button className="reservations-page__new-button" type="button" onClick={() => { setIsFormOpen((open) => !open); setError(""); }}>
           <Icon name="plus" size={18} />
           Nueva reserva
         </button>
@@ -157,95 +118,38 @@ function Reservations() {
               <span className="panel__eyebrow">NUEVA RESERVA</span>
               <h2>Programa tu espacio o recurso</h2>
             </div>
-
-            <button
-              className="reservations-form__close"
-              type="button"
-              onClick={() => setIsFormOpen(false)}
-              aria-label="Cerrar formulario"
-            >
+            <button className="reservations-form__close" type="button" onClick={() => setIsFormOpen(false)} aria-label="Cerrar formulario">
               <Icon name="close" size={18} />
             </button>
           </div>
-
           <form className="reservations-form__body" onSubmit={handleSubmit}>
             <div className="reservations-form__grid">
               <label>
                 <span>Recurso o espacio</span>
-                <select name="resource" value={form.resource} onChange={handleChange}>
+                <select name="recurso_id" value={form.recurso_id} onChange={handleChange}>
                   <option value="">Selecciona un recurso</option>
-                  {resources.filter((item) => item.status === "DISPONIBLE").map((item) => (
-                    <option key={item.id} value={item.name}>{item.name} · {item.location}</option>
+                  {resourcesList.filter((r) => r.status === "DISPONIBLE").map((r) => (
+                    <option key={r.id} value={r.id}>{r.name} · {r.location}</option>
                   ))}
                 </select>
               </label>
-
-              <label>
-                <span>Tipo</span>
-                <select name="type" value={form.type} onChange={handleChange}>
-                  <option>Sala</option>
-                  <option>Laboratorio</option>
-                  <option>Equipo</option>
-                  <option>Auditorio</option>
-                  <option>Espacio académico</option>
-                </select>
-              </label>
-
               <label>
                 <span>Fecha</span>
-                <input
-                  type="date"
-                  name="date"
-                  value={form.date}
-                  onChange={handleChange}
-                />
+                <input type="date" name="fecha" value={form.fecha} onChange={handleChange} />
               </label>
-
-              <label>
-                <span>Ubicación</span>
-                <input
-                  name="location"
-                  value={form.location}
-                  onChange={handleChange}
-                  placeholder="Se completa al seleccionar el recurso"
-                  readOnly
-                />
-              </label>
-
               <label>
                 <span>Hora de inicio</span>
-                <input
-                  type="time"
-                  name="startTime"
-                  value={form.startTime}
-                  onChange={handleChange}
-                />
+                <input type="time" name="hora_inicio" value={form.hora_inicio} onChange={handleChange} />
               </label>
-
               <label>
                 <span>Hora de finalización</span>
-                <input
-                  type="time"
-                  name="endTime"
-                  value={form.endTime}
-                  onChange={handleChange}
-                />
+                <input type="time" name="hora_fin" value={form.hora_fin} onChange={handleChange} />
               </label>
             </div>
-
             {error && <p className="reservations-form__error">{error}</p>}
-
             <div className="reservations-form__actions">
-              <button
-                className="reservations-form__cancel"
-                type="button"
-                onClick={() => setIsFormOpen(false)}
-              >
-                Cancelar
-              </button>
-              <button className="reservations-form__submit" type="submit">
-                Confirmar reserva
-              </button>
+              <button className="reservations-form__cancel" type="button" onClick={() => setIsFormOpen(false)}>Cancelar</button>
+              <button className="reservations-form__submit" type="submit">Confirmar reserva</button>
             </div>
           </form>
         </section>
@@ -254,27 +158,11 @@ function Reservations() {
       <section className="reservations-page__toolbar panel">
         <div className="reservations-page__search">
           <Icon name="search" size={18} />
-          <input
-            type="search"
-            placeholder="Buscar por recurso, tipo o ubicación..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            aria-label="Buscar reservas"
-          />
+          <input type="search" placeholder="Buscar por recurso, tipo o ubicación..." value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Buscar reservas" />
         </div>
-
         <div className="reservations-page__filters" aria-label="Filtrar reservas">
           {filters.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={
-                filter === item
-                  ? "reservations-page__filter reservations-page__filter--active"
-                  : "reservations-page__filter"
-              }
-              onClick={() => setFilter(item)}
-            >
+            <button key={item} type="button" className={filter === item ? "reservations-page__filter reservations-page__filter--active" : "reservations-page__filter"} onClick={() => setFilter(item)}>
               {item}
             </button>
           ))}
@@ -287,19 +175,20 @@ function Reservations() {
             <span className="panel__eyebrow">AGENDA</span>
             <h2>Reservas registradas</h2>
           </div>
-          <span className="reservations-page__count">
-            {filteredReservations.length}
-          </span>
+          <span className="reservations-page__count">{filteredReservations.length}</span>
         </div>
 
-        {filteredReservations.length > 0 ? (
+        {loading ? (
+          <div className="reservations-page__empty panel"><p>Cargando reservas...</p></div>
+        ) : error ? (
+          <div className="reservations-page__empty panel">
+            <p>{error}</p>
+            <button type="button" onClick={loadData}>Reintentar</button>
+          </div>
+        ) : filteredReservations.length > 0 ? (
           <div className="reservations-page__list">
             {filteredReservations.map((reservation) => (
-              <ReservationCard
-                key={reservation.id}
-                reservation={reservation}
-                onCancel={handleCancel}
-              />
+              <ReservationCard key={reservation.id} reservation={reservation} onCancel={handleCancel} />
             ))}
           </div>
         ) : (
@@ -307,12 +196,7 @@ function Reservations() {
             <Icon name="clock" size={18} />
             <h3>No encontramos reservas</h3>
             <p>Prueba con otro filtro o registra una nueva reserva.</p>
-            <button
-              type="button"
-              onClick={() => setIsFormOpen(true)}
-            >
-              Crear reserva
-            </button>
+            <button type="button" onClick={() => setIsFormOpen(true)}>Crear reserva</button>
           </div>
         )}
       </section>
