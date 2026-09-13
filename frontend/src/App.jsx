@@ -34,7 +34,7 @@ function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/" element={<Navigate to={localStorage.getItem("uniajs-smart-campus-role") === "admin" ? "/admin" : "/dashboard"} replace />} />
+            <Route path="/" element={<Navigate to={localStorage.getItem("smart-campus-role") === "administrador" ? "/admin" : "/dashboard"} replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route element={<AdminRoute />}>
               <Route path="/admin" element={<AdminModule />} />
