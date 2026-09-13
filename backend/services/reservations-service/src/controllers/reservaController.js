@@ -33,10 +33,12 @@ export const reservaController = {
         return res.status(400).json({ error: `El horario debe estar entre ${BUSINESS_HOURS_START} y ${BUSINESS_HOURS_END}` });
       }
 
-      const recursosResp = await axios.get(`${RESOURCES_SERVICE_URL}/api/recursos/${recurso_id}`);
+      const recursosResp = await axios.get(`${RESOURCES_SERVICE_URL}/api/recursos/${recurso_id}`, {
+        headers: { Authorization: req.headers.authorization }
+      });
       const recurso = recursosResp.data;
 
-      if (!recurso || recurso.estado !== 'activo') {
+      if (!recurso || recurso.estado !== 'disponible') {
         return res.status(400).json({ error: 'El recurso no existe o no está activo' });
       }
 
@@ -62,7 +64,7 @@ export const reservaController = {
           hora_inicio,
           hora_fin,
           mensaje: `Tu reserva para el recurso ${recurso_id} ha sido creada.`
-        });
+        }, {headers: { Authorization: req.headers.authorization }});
       } catch (notifErr) {
         console.error('Error enviando notificación:', notifErr.message);
       }

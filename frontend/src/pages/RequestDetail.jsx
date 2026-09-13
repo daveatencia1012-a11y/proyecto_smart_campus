@@ -1,20 +1,45 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { requests as initialRequests } from "../data/mockData";
-import useLocalStorage from "../hooks/useLocalStorage";
+import { getRequestById } from "../services/requestsService";
 import Icon from "../components/Icon/Icon";
 
 function RequestDetail() {
   const { id } = useParams();
-  const [requests] = useLocalStorage("uajs_requests", initialRequests);
-  const request = requests.find((item) => String(item.id) === id);
+  const [request, setRequest] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (!request) {
+  useEffect(() => {
+    async function loadRequest() {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await getRequestById(id);
+        setRequest(data);
+      } catch (err) {
+        setError(err.message || "Error al cargar la solicitud.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadRequest();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <main className="request-detail">
+        <p>Cargando solicitud...</p>
+      </main>
+    );
+  }
+
+  if (error || !request) {
     return (
       <main className="request-detail">
         <section className="request-detail__not-found panel">
           <Icon name="search" size={24} />
           <h1>Solicitud no encontrada</h1>
-          <p>La solicitud que intentas consultar no existe en los datos de demostración.</p>
+          <p>{error || "La solicitud que intentas consultar no existe."}</p>
           <Link to="/requests">Volver a solicitudes</Link>
         </section>
       </main>

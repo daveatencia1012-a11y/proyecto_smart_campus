@@ -5,6 +5,7 @@ import heroImage from "../assets/hero.png";
 import uajsLogo from "../assets/uajs-logo.png";
 import Icon from "../components/Icon/Icon";
 import LoadingScreen from "../components/LoadingScreen/LoadingScreen";
+import { login as apiLogin } from "../services/authService";
 
 function Login() {
   const navigate = useNavigate();
@@ -17,9 +18,9 @@ function Login() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
 
-  useEffect(() => {
-    if (localStorage.getItem("uniajs-smart-campus-auth") === "true") {
-      const role = localStorage.getItem("uniajs-smart-campus-role") || "student";
+    useEffect(() => {
+    if (localStorage.getItem("smart-campus-token")) {
+      const role = localStorage.getItem("smart-campus-role") || "student";
       navigate(role === "admin" ? "/admin" : "/dashboard", { replace: true });
     }
   }, [navigate]);
@@ -32,7 +33,7 @@ function Login() {
     }));
   };
 
-  const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
     event.preventDefault();
 
     const email = form.email.trim();
@@ -51,17 +52,8 @@ function Login() {
     setIsLoading(true);
     setError("");
 
-    window.setTimeout(() => {
-      localStorage.setItem("uniajs-smart-campus-auth", "true");
-      const isAdmin = /(^|[._-])admin([@._-]|$)/i.test(email) || email.toLowerCase().startsWith("admin@");
-      localStorage.setItem("uniajs-smart-campus-role", isAdmin ? "admin" : "student");
-
-      if (remember) {
-        localStorage.setItem("uniajs-smart-campus-user", email);
-      } else {
-        localStorage.removeItem("uniajs-smart-campus-user");
-      }
-
+    try {
+      await apiLogin(email, password);
       setIsLoading(false);
       setIsEnteringCampus(true);
 
@@ -69,7 +61,10 @@ function Login() {
         const destination = location.state?.from?.pathname || "/dashboard";
         navigate(destination, { replace: true });
       }, 2800);
-    }, 650);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || "Credenciales inválidas. Verifica tu correo y contraseña.");
+    }
   };
 
   if (isEnteringCampus) {
