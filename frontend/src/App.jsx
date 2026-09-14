@@ -25,16 +25,21 @@ import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import AdminModule from "./pages/admin/AdminModule";
 import AdminRoute from "./components/AdminRoute/AdminRoute";
+import Landing from "./pages/Landing";
+import Home from "./pages/Home";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/landing" element={<Landing />} />
         <Route path="/login" element={<Login />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/" element={<Navigate to={localStorage.getItem("uniajs-smart-campus-role") === "admin" ? "/admin" : "/dashboard"} replace />} />
+            
+            <Route path="/home" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route element={<AdminRoute />}>
               <Route path="/admin" element={<AdminModule />} />
