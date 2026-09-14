@@ -13,6 +13,10 @@ app.use(express.json());
 
 app.use('/api/solicitudes', solicitudesRoutes);
 app.use('/api/pqrs', pqrsRoutes);
+//Nuevo
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'requests-service' });
+});
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
