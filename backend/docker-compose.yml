@@ -148,5 +148,36 @@ services:
       mysql:
         condition: service_healthy
 
+  gateway:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: campus-gateway
+    ports:
+      - "3200:3200"
+    env_file:
+      - .env
+    environment:
+      PORT: 3200
+      USERS_SERVICE_URL: http://users-service:3201
+      REQUESTS_SERVICE_URL: http://requests-service:3202
+      RESERVATIONS_SERVICE_URL: http://reservations-service:3203
+      RESOURCES_SERVICE_URL: http://resources-service:3204
+      EVENTS_SERVICE_URL: http://events-service:3205
+      NOTIFICATIONS_SERVICE_URL: http://notifications-service:3206
+    depends_on:
+      users-service:
+        condition: service_started
+      requests-service:
+        condition: service_started
+      reservations-service:
+        condition: service_started
+      resources-service:
+        condition: service_started
+      events-service:
+        condition: service_started
+      notifications-service:
+        condition: service_started
+        
 volumes:
   mysql_data:
