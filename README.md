@@ -101,3 +101,59 @@ El frontend incluye:
 - Convenciones de nombres CSS compatibles con metodología BEM.
 
 ---
+## Arquitectura
+
+La arquitectura implementada se divide principalmente en tres niveles.
+
+### 1. Frontend
+
+Aplicación construida con React y Vite.
+
+El archivo `vite.config.js` configura un proxy para enviar las peticiones que comienzan por `/api` hacia el API Gateway:
+
+```text
+Frontend
+   │
+   │ /api/*
+   ▼
+http://localhost:3200
+```
+
+### 2. API Gateway
+
+El Gateway se encuentra implementado en:
+
+```text
+backend/src/app.js
+```
+
+Su responsabilidad principal es recibir las solicitudes del frontend y dirigirlas al microservicio correspondiente.
+
+Puerto predeterminado:
+
+```text
+3200
+```
+
+### 3. Microservicios
+
+El backend contiene seis microservicios principales:
+
+| Microservicio | Responsabilidad principal | Puerto esperado |
+| --- | --- | ---: |
+| `users-service` | Usuarios, autenticación, roles y dashboard | 3201 |
+| `requests-service` | Solicitudes y PQRS | 3202 |
+| `reservations-service` | Reservas y disponibilidad | 3203 |
+| `resources-service` | Recursos y tipos de recursos | 3204 |
+| `events-service` | Eventos y tipos de eventos | 3205 |
+| `notifications-service` | Notificaciones | 3206 |
+
+Cada microservicio expone un endpoint:
+
+```text
+GET /health
+```
+
+para verificar si se encuentra activo.
+
+---
