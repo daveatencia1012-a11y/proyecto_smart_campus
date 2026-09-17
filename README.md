@@ -288,3 +288,188 @@ El repositorio actualmente **no declara una versión exacta de Node.js mediante 
 Por esta razón, no se establece una versión específica en este README. El equipo debería definir y documentar la versión utilizada durante el desarrollo para facilitar una instalación reproducible.
 
 ---
+
+## Instalación
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/daveatencia1012-a11y/proyecto_smart_campus.git
+cd proyecto_smart_campus
+```
+
+### 2. Instalar dependencias del frontend
+
+```bash
+cd frontend
+npm install
+```
+
+### 3. Instalar dependencias del API Gateway
+
+Desde la raíz del repositorio:
+
+```bash
+cd backend
+npm install
+```
+
+### 4. Instalar dependencias de los microservicios
+
+#### Users Service
+
+```bash
+cd backend/services/users-service
+npm install
+```
+
+#### Requests Service
+
+```bash
+cd backend/services/requests-service
+npm install
+```
+
+#### Reservations Service
+
+```bash
+cd backend/services/reservations-service
+npm install
+```
+
+#### Resources Service
+
+```bash
+cd backend/services/resources-service
+npm install
+```
+
+#### Events Service
+
+```bash
+cd backend/services/events-service
+npm install
+```
+
+#### Notifications Service
+
+```bash
+cd backend/services/notifications-service
+npm install
+```
+
+---
+
+## Configuración
+
+El proyecto utiliza variables de entorno para configurar conexiones, puertos, URLs entre servicios y autenticación.
+
+Los archivos `.env` **no deben subirse al repositorio**.
+
+El `.gitignore` del proyecto ya incluye reglas para evitar el seguimiento de:
+
+```text
+.env
+.env.local
+.env.*.local
+node_modules/
+dist/
+build/
+```
+
+### API Gateway
+
+El Gateway admite las siguientes variables:
+
+```dotenv
+PORT=3200
+
+USERS_SERVICE_URL=http://localhost:3201
+REQUESTS_SERVICE_URL=http://localhost:3202
+RESERVATIONS_SERVICE_URL=http://localhost:3203
+RESOURCES_SERVICE_URL=http://localhost:3204
+EVENTS_SERVICE_URL=http://localhost:3205
+NOTIFICATIONS_SERVICE_URL=http://localhost:3206
+```
+
+Si estas variables no se definen, el código utiliza esas URLs locales como valores predeterminados.
+
+### Users Service
+
+El repositorio contiene un archivo `.env.example`.
+
+Debe crearse un archivo `.env` local utilizando ese archivo como referencia y reemplazando cualquier contraseña o secreto de demostración por valores propios y seguros.
+
+Variables identificadas:
+
+```text
+PORT
+DB_HOST
+DB_PORT
+DB_USER
+DB_PASSWORD
+DB_NAME
+JWT_SECRET
+JWT_EXPIRES_IN
+JWT_REFRESH_SECRET
+JWT_REFRESH_EXPIRES_IN
+```
+
+### Reservations Service
+
+También contiene un `.env.example`.
+
+Variables identificadas:
+
+```text
+PORT
+DB_HOST
+DB_PORT
+DB_USER
+DB_PASSWORD
+DB_NAME
+JWT_SECRET
+RESOURCES_SERVICE_URL
+NOTIFICATIONS_SERVICE_URL
+BUSINESS_HOURS_START
+BUSINESS_HOURS_END
+```
+
+Si todos los servicios se ejecutan directamente en el equipo local, las URLs entre servicios deben apuntar al host y puerto correspondientes del entorno local.
+
+### Notifications Service
+
+Variables identificadas:
+
+```text
+PORT
+DB_HOST
+DB_PORT
+DB_USER
+DB_PASSWORD
+DB_NAME
+JWT_SECRET
+```
+
+### Requests, Resources y Events
+
+Los archivos de configuración de base de datos de estos servicios utilizan las variables:
+
+```text
+DB_HOST
+DB_USER
+DB_PASSWORD
+DB_NAME
+```
+
+Debe verificarse la configuración específica de cada servicio antes de ejecutarlo.
+
+> No publique contraseñas, tokens, claves JWT, API keys ni información sensible en GitHub.
+
+---
+
+
+
+Por esta razón, no se establece una versión específica en este README. El equipo debería definir y documentar la versión utilizada durante el desarrollo para facilitar una instalación reproducible.
+
+---
