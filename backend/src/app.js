@@ -8,7 +8,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+
 
 const services = {
   users:          process.env.USERS_SERVICE_URL          || "http://localhost:3201",
@@ -39,6 +39,7 @@ for (const [route, target] of Object.entries(proxyRoutes)) {
   app.use(route, createProxyMiddleware({
     target,
     changeOrigin: true,
+    pathRewrite: (path) => route + path,
     onError: (err, req, res) => {
       console.error(`Error en proxy ${route}: ${err.message}`);
       res.status(502).json({ error: "Servicio no disponible", service: route });
