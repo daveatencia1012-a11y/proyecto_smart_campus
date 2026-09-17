@@ -25,7 +25,7 @@ function Header({ onMenuClick }) {
   };
 
   const role = localStorage.getItem("smart-campus-role") || "student";
-  const isAdmin = role === "admin";
+  const isAdmin = role === "administrador";
     const storedUser = (() => {
     try {
       const raw = localStorage.getItem("smart-campus-user");
