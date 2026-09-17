@@ -302,7 +302,7 @@ cd proyecto_smart_campus
 
 ```bash
 cd frontend
-npm install
+pnpm install
 ```
 
 ### 3. Instalar dependencias del API Gateway
@@ -311,7 +311,7 @@ Desde la raíz del repositorio:
 
 ```bash
 cd backend
-npm install
+pnpm install
 ```
 
 ### 4. Instalar dependencias de los microservicios
@@ -320,42 +320,42 @@ npm install
 
 ```bash
 cd backend/services/users-service
-npm install
+pnpm install
 ```
 
 #### Requests Service
 
 ```bash
 cd backend/services/requests-service
-npm install
+pnpm install
 ```
 
 #### Reservations Service
 
 ```bash
 cd backend/services/reservations-service
-npm install
+pnpm install
 ```
 
 #### Resources Service
 
 ```bash
 cd backend/services/resources-service
-npm install
+pnpm install
 ```
 
 #### Events Service
 
 ```bash
 cd backend/services/events-service
-npm install
+pnpm install
 ```
 
 #### Notifications Service
 
 ```bash
 cd backend/services/notifications-service
-npm install
+pnpm install
 ```
 
 ---
@@ -529,49 +529,59 @@ Cada servicio debe ejecutarse en una terminal independiente.
 
 ```bash
 cd backend/services/users-service
-npm start
+pnpm start
 ```
 
 ### Terminal 2 - Requests Service
 
 ```bash
 cd backend/services/requests-service
-npm start
+pnpm start
 ```
 
 ### Terminal 3 - Reservations Service
 
 ```bash
 cd backend/services/reservations-service
-npm start
+pnpm start
 ```
 
 ### Terminal 4 - Resources Service
 
 ```bash
 cd backend/services/resources-service
-npm start
+pnpm start
 ```
 
 ### Terminal 5 - Events Service
 
 ```bash
 cd backend/services/events-service
-npm start
+pnpm start
 ```
 
 ### Terminal 6 - Notifications Service
 
 ```bash
 cd backend/services/notifications-service
-npm start
+pnpm start
 ```
 
 ### Terminal 7 - API Gateway
 
 ```bash
 cd backend
-npm start
+pnpm start
+```
+
+Cada servicio puede ejecutarse en una terminal conjunta.
+```bash
+Docker compose build
+(Construir)
+Docker compose up -d
+(Levantar)
+Docker compose down
+(Apagar)
 ```
 
 El Gateway utiliza por defecto:
@@ -584,7 +594,7 @@ http://localhost:3200
 
 ```bash
 cd frontend
-npm run dev
+pnpm run dev
 ```
 
 Vite mostrará en la terminal la dirección local donde quedó disponible el frontend.
@@ -740,13 +750,13 @@ El proyecto dispone de verificación con ESLint:
 
 ```bash
 cd frontend
-npm run lint
+pnpm run dev
 ```
 
 También puede comprobarse que el frontend compile correctamente:
 
 ```bash
-npm run build
+pnpm run dev
 ```
 
 ### Health checks
@@ -763,11 +773,5 @@ curl http://localhost:3206/health
 curl http://localhost:3200/health
 ```
 
-### Pruebas automatizadas
 
-En los `package.json` revisados no se identificó actualmente un script `test` que permita documentar una suite automatizada de pruebas.
-
-Por esta razón, no se incluye un comando de pruebas inexistente.
-
----
 
