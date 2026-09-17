@@ -21,7 +21,7 @@ function Login() {
     useEffect(() => {
     if (localStorage.getItem("smart-campus-token")) {
       const role = localStorage.getItem("smart-campus-role") || "student";
-      navigate(role === "admin" ? "/admin" : "/dashboard", { replace: true });
+      navigate(role === "administrador" ? "/admin" : "/dashboard", { replace: true });
     }
   }, [navigate]);
 
@@ -58,7 +58,8 @@ function Login() {
       setIsEnteringCampus(true);
 
       window.setTimeout(() => {
-        const destination = location.state?.from?.pathname || "/dashboard";
+        const role = localStorage.getItem("smart-campus-role") || "estudiante";
+        const destination = location.state?.from?.pathname || (role === "administrador" ? "/admin" : "/dashboard"); 
         navigate(destination, { replace: true });
       }, 2800);
     } catch (err) {
