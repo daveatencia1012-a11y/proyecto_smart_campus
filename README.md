@@ -593,4 +593,181 @@ El repositorio no fija explícitamente un puerto personalizado para la interfaz 
 
 ---
 
+## Uso
+
+Una vez levantados MySQL, los microservicios, el Gateway y el frontend:
+
+1. Abra en el navegador la URL indicada por Vite.
+2. Acceda a la pantalla de inicio de sesión.
+3. Inicie sesión con un usuario existente en la base de datos.
+4. Utilice el menú de navegación para acceder a las funcionalidades disponibles.
+
+Entre las rutas del frontend se encuentran:
+
+```text
+/
+ /landing
+ /login
+ /home
+ /dashboard
+ /admin
+ /admin/:module
+ /services
+ /services/:id
+ /requests
+ /requests/:id
+ /reservations
+ /reservations/:id
+ /events
+ /calendar
+ /resources
+ /pqrs
+ /notifications
+ /profile
+ /settings
+ /help
+```
+
+> No se incluyen credenciales de acceso en este README porque no se identificaron credenciales de demostración que puedan documentarse de forma segura y verificable.
+
+---
+
+## API Gateway
+
+El API Gateway se encuentra en:
+
+```text
+backend/src/app.js
+```
+
+y expone actualmente los siguientes prefijos:
+
+| Ruta del Gateway | Microservicio |
+| --- | --- |
+| `/api/auth` | Users Service |
+| `/api/usuarios` | Users Service |
+| `/api/dashboard` | Users Service |
+| `/api/roles` | Users Service |
+| `/api/solicitudes` | Requests Service |
+| `/api/pqrs` | Requests Service |
+| `/api/reservas` | Reservations Service |
+| `/api/disponibilidad` | Reservations Service |
+| `/api/recursos` | Resources Service |
+| `/api/tipos` | Resources Service |
+| `/api/eventos` | Events Service |
+| `/api/tipos-evento` | Events Service |
+| `/api/notificaciones` | Notifications Service |
+
+---
+
+## Endpoints verificados desde el frontend
+
+### Solicitudes
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| GET | `/api/solicitudes` | Consultar solicitudes |
+| GET | `/api/solicitudes/:id` | Consultar una solicitud |
+| POST | `/api/solicitudes` | Crear una solicitud |
+| PUT | `/api/solicitudes/:id` | Actualizar una solicitud |
+| PUT | `/api/solicitudes/:id/estado` | Cambiar su estado |
+| DELETE | `/api/solicitudes/:id` | Eliminar una solicitud |
+
+Los estados manejados en la interfaz incluyen:
+
+```text
+REGISTRADA
+EN REVISION
+ASIGNADA
+EN PROCESO
+RESUELTA
+CERRADA
+```
+
+### Reservas
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| GET | `/api/reservas` | Consultar reservas |
+| GET | `/api/reservas/:id` | Consultar una reserva |
+| POST | `/api/reservas` | Crear una reserva |
+| PUT | `/api/reservas/:id` | Actualizar una reserva |
+| PUT | `/api/reservas/:id/cancelar` | Cancelar una reserva |
+| GET | `/api/recursos` | Consultar recursos utilizados durante el proceso de reserva |
+
+---
+
+## Health checks
+
+Cada microservicio cuenta con:
+
+```http
+GET /health
+```
+
+Con la configuración local predeterminada pueden verificarse:
+
+```text
+http://localhost:3201/health
+http://localhost:3202/health
+http://localhost:3203/health
+http://localhost:3204/health
+http://localhost:3205/health
+http://localhost:3206/health
+```
+
+El API Gateway también ofrece:
+
+```text
+http://localhost:3200/health
+```
+
+Este endpoint consulta el estado de los seis microservicios y devuelve un estado general.
+
+Ejemplo de verificación:
+
+```bash
+curl http://localhost:3200/health
+```
+
+---
+
+## Verificación y pruebas
+
+### Frontend
+
+El proyecto dispone de verificación con ESLint:
+
+```bash
+cd frontend
+npm run lint
+```
+
+También puede comprobarse que el frontend compile correctamente:
+
+```bash
+npm run build
+```
+
+### Health checks
+
+Para comprobar manualmente los servicios:
+
+```bash
+curl http://localhost:3201/health
+curl http://localhost:3202/health
+curl http://localhost:3203/health
+curl http://localhost:3204/health
+curl http://localhost:3205/health
+curl http://localhost:3206/health
+curl http://localhost:3200/health
+```
+
+### Pruebas automatizadas
+
+En los `package.json` revisados no se identificó actualmente un script `test` que permita documentar una suite automatizada de pruebas.
+
+Por esta razón, no se incluye un comando de pruebas inexistente.
+
+---
 
