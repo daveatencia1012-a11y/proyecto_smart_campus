@@ -468,8 +468,129 @@ Debe verificarse la configuración específica de cada servicio antes de ejecuta
 
 ---
 
+## Base de datos
 
+Los microservicios utilizan **MySQL** mediante la librería `mysql2`.
 
-Por esta razón, no se establece una versión específica en este README. El equipo debería definir y documentar la versión utilizada durante el desarrollo para facilitar una instalación reproducible.
+Se identificaron las siguientes bases de datos predeterminadas:
+
+| Microservicio | Base de datos |
+| --- | --- |
+| Users | `users_db` |
+| Requests | `requests_db` |
+| Reservations | `reservations_db` |
+| Resources | `resources_db` |
+| Events | `events_db` |
+| Notifications | `notifications_db` |
+
+Si todavía no existen, pueden crearse las bases vacías en MySQL:
+
+```sql
+CREATE DATABASE IF NOT EXISTS users_db;
+CREATE DATABASE IF NOT EXISTS requests_db;
+CREATE DATABASE IF NOT EXISTS reservations_db;
+CREATE DATABASE IF NOT EXISTS resources_db;
+CREATE DATABASE IF NOT EXISTS events_db;
+CREATE DATABASE IF NOT EXISTS notifications_db;
+```
+
+### Importante
+
+La revisión actual del repositorio permite confirmar las conexiones a MySQL, pero **no permite documentar de forma confiable un procedimiento completo de migraciones, creación de tablas o seeders**.
+
+Por esta razón, este README no inventa estructuras SQL ni datos iniciales.
+
+Para que la instalación pueda reproducirse desde cero, el equipo debe documentar o incorporar los scripts utilizados para crear:
+
+- Tablas.
+- Relaciones.
+- Datos iniciales o de prueba.
+- Usuarios de demostración, si aplican.
 
 ---
+
+## Ejecución del proyecto
+
+El orden recomendado para una ejecución local es:
+
+```text
+MySQL
+  ↓
+Microservicios
+  ↓
+API Gateway
+  ↓
+Frontend
+```
+
+Cada servicio debe ejecutarse en una terminal independiente.
+
+### Terminal 1 - Users Service
+
+```bash
+cd backend/services/users-service
+npm start
+```
+
+### Terminal 2 - Requests Service
+
+```bash
+cd backend/services/requests-service
+npm start
+```
+
+### Terminal 3 - Reservations Service
+
+```bash
+cd backend/services/reservations-service
+npm start
+```
+
+### Terminal 4 - Resources Service
+
+```bash
+cd backend/services/resources-service
+npm start
+```
+
+### Terminal 5 - Events Service
+
+```bash
+cd backend/services/events-service
+npm start
+```
+
+### Terminal 6 - Notifications Service
+
+```bash
+cd backend/services/notifications-service
+npm start
+```
+
+### Terminal 7 - API Gateway
+
+```bash
+cd backend
+npm start
+```
+
+El Gateway utiliza por defecto:
+
+```text
+http://localhost:3200
+```
+
+### Terminal 8 - Frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+Vite mostrará en la terminal la dirección local donde quedó disponible el frontend.
+
+El repositorio no fija explícitamente un puerto personalizado para la interfaz mediante `vite.config.js`; por ello debe utilizarse la dirección que Vite muestre al iniciar.
+
+---
+
+
