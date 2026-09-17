@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS permisos (
   accion ENUM('crear', 'leer', 'actualizar', 'eliminar') NOT NULL
 );
 
+-- Usuario administrador inicial
+INSERT INTO users (nombre, email, password_hash, rol) VALUES
+('Administrador', 'admin@uniajs.edu.co', '$2b$10$YdBszj59W.55EjIWhJRWR.sRv5/NuRVRD5NvizJj/BBL50LiF06l.', 'administrador');
+
 USE requests_db;
 
 CREATE TABLE IF NOT EXISTS solicitudes (
