@@ -90,7 +90,7 @@ function Sidebar({ isOpen, onClose }) {
             {navigation.map(renderLink)}
           </nav>
 
-          {localStorage.getItem("uniajs-smart-campus-role") === "admin" && (
+          {localStorage.getItem("smart-campus-role") === "administrador" && (
             <>
               <div className="sidebar__divider" />
               <div className="sidebar__label">ADMINISTRACIÓN</div>
