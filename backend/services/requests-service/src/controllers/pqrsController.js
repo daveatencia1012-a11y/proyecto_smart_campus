@@ -45,13 +45,22 @@ export const getPqrsList = async (req, res, next) => {
   }
 };
 
+export const getMisPqrs = async (req, res, next) => {
+  try {
+    const pqrsList = await PqrsModel.findAll({ usuario_id: req.user.id });
+    res.json(pqrsList);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getPqrsById = async (req, res, next) => {
   try {
     const pqrs = await PqrsModel.findById(req.params.id);
     if (!pqrs) return res.status(404).json({ error: 'PQRS no encontrada' });
     const isOwner = pqrs.usuario_id === req.user.id;
-    const isAdmin = req.user.rol === 'administrador';
-    if (!isOwner && !isAdmin) return res.status(403).json({ error: 'No autorizado' });
+    const isStaff = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
+    if (!isOwner && !isStaff) return res.status(403).json({ error: 'No autorizado' });
     res.json(pqrs);
   } catch (error) {
     next(error);

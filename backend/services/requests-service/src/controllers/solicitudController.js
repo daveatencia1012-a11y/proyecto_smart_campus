@@ -52,9 +52,18 @@ export const getSolicitudById = async (req, res, next) => {
     const solicitud = await SolicitudModel.findById(req.params.id);
     if (!solicitud) return res.status(404).json({ error: 'Solicitud no encontrada' });
     const isOwner = solicitud.usuario_id === req.user.id;
-    const isAdmin = req.user.rol === 'administrador';
-    if (!isOwner && !isAdmin) return res.status(403).json({ error: 'No autorizado' });
+    const isStaff = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
+    if (!isOwner && !isStaff) return res.status(403).json({ error: 'No autorizado' });
     res.json(solicitud);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMisSolicitudes = async (req, res, next) => {
+  try {
+    const solicitudes = await SolicitudModel.findAll({ usuario_id: req.user.id });
+    res.json(solicitudes);
   } catch (error) {
     next(error);
   }

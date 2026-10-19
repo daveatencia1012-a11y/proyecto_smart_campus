@@ -6,6 +6,7 @@ class PqrsModel {
     const params = [];
     if (filters.tipo) { query += ' AND tipo = ?'; params.push(filters.tipo); }
     if (filters.estado) { query += ' AND estado = ?'; params.push(filters.estado); }
+    if (filters.usuario_id) { query += ' AND usuario_id = ?'; params.push(filters.usuario_id); }
     query += ' ORDER BY creado_en DESC';
     const [rows] = await pool.query(query, params);
     return rows;
