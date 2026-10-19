@@ -87,7 +87,8 @@ export const reservaController = {
       if (fecha) filters.fecha = fecha;
       if (estado) filters.estado = estado;
 
-      if (userRole !== 'administradoristrador') {
+      const esGestor = userRole === 'administrador' || userRole === 'administrativo';
+      if (!esGestor) {
         filters.usuario_id = userId;
       }
 
@@ -107,10 +108,10 @@ export const reservaController = {
         return res.status(404).json({ error: 'Reserva no encontrada' });
       }
 
-      const isAdmin = req.user.rol === 'administrador';
+      const esGestor = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
       const isOwner = reserva.usuario_id === (req.user.id || req.user.usuario_id);
 
-      if (!isAdmin && !isOwner) {
+      if (!esGestor && !isOwner) {
         return res.status(403).json({ error: 'No tienes permisos para ver esta reserva' });
       }
 
@@ -134,10 +135,10 @@ export const reservaController = {
         return res.status(400).json({ error: 'No se puede modificar una reserva cancelada' });
       }
 
-      const isAdmin = req.user.rol === 'administrador';
+      const esGestor = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
       const isOwner = reserva.usuario_id === (req.user.id || req.user.usuario_id);
 
-      if (!isAdmin && !isOwner) {
+      if (!esGestor && !isOwner) {
         return res.status(403).json({ error: 'No tienes permisos para modificar esta reserva' });
       }
 
@@ -186,10 +187,10 @@ export const reservaController = {
         return res.status(400).json({ error: 'La reserva ya está cancelada' });
       }
 
-      const isAdmin = req.user.rol === 'administrador';
+      const esGestor = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
       const isOwner = reserva.usuario_id === (req.user.id || req.user.usuario_id);
 
-      if (!isAdmin && !isOwner) {
+      if (!esGestor && !isOwner) {
         return res.status(403).json({ error: 'No tienes permisos para cancelar esta reserva' });
       }
 

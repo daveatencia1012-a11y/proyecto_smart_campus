@@ -5,6 +5,6 @@ import { authenticate, authorize } from '../middleware/auth.js';
 const router = Router();
 
 router.get('/:recurso_id', authenticate, disponibilidadController.getDisponibilidad);
-router.post('/', authenticate, authorize('administrador'), disponibilidadController.createDisponibilidad);
+router.post('/', authenticate, authorize('administrador', 'administrativo'), disponibilidadController.createDisponibilidad);
 
 export default router;
