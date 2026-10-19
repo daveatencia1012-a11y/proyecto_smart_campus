@@ -1,5 +1,4 @@
 import Recurso from '../models/Recurso.js';
-import { authenticate, authorize } from '../middleware/auth.js';
 
 export const createRecurso = async (req, res, next) => {
   try {
