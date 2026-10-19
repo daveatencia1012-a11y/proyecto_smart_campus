@@ -56,15 +56,13 @@ export const reservaController = {
 
       try {
         await axios.post(`${NOTIFICATIONS_SERVICE_URL}/api/notificaciones`, {
-          tipo: 'reserva_creada',
+          tipo: 'reserva',
           usuario_id,
-          recurso_id,
-          reserva_id: reserva.id,
-          fecha,
-          hora_inicio,
-          hora_fin,
-          mensaje: `Tu reserva para el recurso ${recurso_id} ha sido creada.`
-        }, {headers: { Authorization: req.headers.authorization }});
+          titulo: 'Reserva creada',
+          mensaje: `Tu reserva para el recurso ${recurso_id} ha sido creada.`,
+          referencia_id: reserva.id,
+          referencia_tipo: 'reserva'
+        }, { headers: { 'x-internal-token': process.env.INTERNAL_API_TOKEN } });
       } catch (notifErr) {
         console.error('Error enviando notificación:', notifErr.message);
       }
@@ -87,7 +85,8 @@ export const reservaController = {
       if (fecha) filters.fecha = fecha;
       if (estado) filters.estado = estado;
 
-      if (userRole !== 'administradoristrador') {
+      const esGestor = userRole === 'administrador' || userRole === 'administrativo';
+      if (!esGestor) {
         filters.usuario_id = userId;
       }
 
@@ -107,10 +106,10 @@ export const reservaController = {
         return res.status(404).json({ error: 'Reserva no encontrada' });
       }
 
-      const isAdmin = req.user.rol === 'administrador';
+      const esGestor = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
       const isOwner = reserva.usuario_id === (req.user.id || req.user.usuario_id);
 
-      if (!isAdmin && !isOwner) {
+      if (!esGestor && !isOwner) {
         return res.status(403).json({ error: 'No tienes permisos para ver esta reserva' });
       }
 
@@ -134,10 +133,10 @@ export const reservaController = {
         return res.status(400).json({ error: 'No se puede modificar una reserva cancelada' });
       }
 
-      const isAdmin = req.user.rol === 'administrador';
+      const esGestor = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
       const isOwner = reserva.usuario_id === (req.user.id || req.user.usuario_id);
 
-      if (!isAdmin && !isOwner) {
+      if (!esGestor && !isOwner) {
         return res.status(403).json({ error: 'No tienes permisos para modificar esta reserva' });
       }
 
@@ -186,10 +185,10 @@ export const reservaController = {
         return res.status(400).json({ error: 'La reserva ya está cancelada' });
       }
 
-      const isAdmin = req.user.rol === 'administrador';
+      const esGestor = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
       const isOwner = reserva.usuario_id === (req.user.id || req.user.usuario_id);
 
-      if (!isAdmin && !isOwner) {
+      if (!esGestor && !isOwner) {
         return res.status(403).json({ error: 'No tienes permisos para cancelar esta reserva' });
       }
 
@@ -197,13 +196,13 @@ export const reservaController = {
 
       try {
         await axios.post(`${NOTIFICATIONS_SERVICE_URL}/api/notificaciones`, {
-          tipo: 'reserva_cancelada',
+          tipo: 'reserva',
           usuario_id: reserva.usuario_id,
-          recurso_id: reserva.recurso_id,
-          reserva_id: id,
-          motivo_cancelacion: motivo_cancelacion || null,
-          mensaje: `Tu reserva para el recurso ${reserva.recurso_id} ha sido cancelada.`
-        });
+          titulo: 'Reserva cancelada',
+          mensaje: `Tu reserva para el recurso ${reserva.recurso_id} ha sido cancelada.`,
+          referencia_id: id,
+          referencia_tipo: 'reserva'
+        }, { headers: { 'x-internal-token': process.env.INTERNAL_API_TOKEN } });
       } catch (notifErr) {
         console.error('Error enviando notificación:', notifErr.message);
       }

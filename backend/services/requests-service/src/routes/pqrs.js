@@ -4,10 +4,13 @@ import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.post('/', authenticateToken, authorizeRoles('estudiante', 'docente', 'administrador'), pqrsController.createPqrs);
-router.get('/', authenticateToken, authorizeRoles('administrador'), pqrsController.getPqrsList);
+const STAFF = ['administrador', 'administrativo'];
+
+router.post('/', authenticateToken, authorizeRoles('estudiante', 'docente', ...STAFF), pqrsController.createPqrs);
+router.get('/', authenticateToken, authorizeRoles(...STAFF), pqrsController.getPqrsList);
+router.get('/mis', authenticateToken, pqrsController.getMisPqrs);
 router.get('/:id', authenticateToken, pqrsController.getPqrsById);
-router.put('/:id', authenticateToken, authorizeRoles('administrador'), pqrsController.updatePqrs);
+router.put('/:id', authenticateToken, authorizeRoles(...STAFF), pqrsController.updatePqrs);
 router.delete('/:id', authenticateToken, authorizeRoles('administrador'), pqrsController.deletePqrs);
 
 export default router;

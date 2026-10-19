@@ -37,7 +37,7 @@ export const eventoController = {
           mensaje: `Se ha creado el evento "${nombre}" para el ${fecha}`,
           referencia_id: evento.id,
           referencia_tipo: 'evento'
-        });
+        }, { headers: { 'x-internal-token': process.env.INTERNAL_API_TOKEN } });
       } catch (notifErr) {
         console.error('Error enviando notificación:', notifErr.message);
       }
@@ -88,10 +88,10 @@ export const eventoController = {
         return res.status(404).json({ error: 'Evento no encontrado' });
       }
 
-      const isAdmin = req.user.rol === 'administrador';
+      const esGestor = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
       const isCreator = evento.creado_por === req.user.id;
 
-      if (!isAdmin && !isCreator) {
+      if (!esGestor && !isCreator) {
         return res.status(403).json({ error: 'No tienes permisos para modificar este evento' });
       }
 

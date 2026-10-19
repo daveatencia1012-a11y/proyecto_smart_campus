@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, authorize } from "../middleware/auth.js";
+import { authenticate, authorize, requireInternalToken } from "../middleware/auth.js";
 import {
   crearNotificacion,
   listarNotificaciones,
@@ -12,7 +12,7 @@ import {
 
 const router = Router();
 
-router.post("/", crearNotificacion);
+router.post("/", requireInternalToken, crearNotificacion);
 router.get("/", authenticate, listarNotificaciones);
 router.get("/no-leidas", authenticate, contarNoLeidas);
 router.get("/conteo/no-leidas", authenticate, authorize('administrador'), countGlobalNoLeidas);

@@ -34,4 +34,15 @@ export function authorize(...roles) {
   };
 }
 
-export default { authenticate, authorize };
+export function requireInternalToken(req, res, next) {
+  const token = req.headers["x-internal-token"];
+  const expected = process.env.INTERNAL_API_TOKEN;
+
+  if (!expected || token !== expected) {
+    return res.status(403).json({ error: "Acceso interno requerido" });
+  }
+
+  next();
+}
+
+export default { authenticate, authorize, requireInternalToken };

@@ -15,7 +15,7 @@ async function notifyStatusChange(solicitud) {
       mensaje: `Tu solicitud #${solicitud.id} cambió de estado a ${solicitud.estado}`,
       referencia_id: solicitud.id,
       referencia_tipo: 'solicitud'
-    });
+    }, { headers: { 'x-internal-token': process.env.INTERNAL_API_TOKEN } });
   } catch (error) {
     console.error('Error al enviar notificación:', error.message);
   }
@@ -52,9 +52,18 @@ export const getSolicitudById = async (req, res, next) => {
     const solicitud = await SolicitudModel.findById(req.params.id);
     if (!solicitud) return res.status(404).json({ error: 'Solicitud no encontrada' });
     const isOwner = solicitud.usuario_id === req.user.id;
-    const isAdmin = req.user.rol === 'administrador';
-    if (!isOwner && !isAdmin) return res.status(403).json({ error: 'No autorizado' });
+    const isStaff = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
+    if (!isOwner && !isStaff) return res.status(403).json({ error: 'No autorizado' });
     res.json(solicitud);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMisSolicitudes = async (req, res, next) => {
+  try {
+    const solicitudes = await SolicitudModel.findAll({ usuario_id: req.user.id });
+    res.json(solicitudes);
   } catch (error) {
     next(error);
   }
