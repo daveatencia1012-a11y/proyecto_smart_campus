@@ -3,6 +3,8 @@ import { EventoModel } from '../models/Evento.js';
 
 const NOTIFICATIONS_SERVICE_URL = process.env.NOTIFICATIONS_SERVICE_URL || 'http://notifications-service:3206';
 
+const TIPOS_VALIDOS = ['academico', 'institucional', 'cultural', 'deportivo', 'otro'];
+
 export const eventoController = {
   async createEvento(req, res, next) {
     try {
@@ -13,14 +15,13 @@ export const eventoController = {
         return res.status(400).json({ error: 'Faltan campos requeridos' });
       }
 
-      const tiposValidos = ['academico', 'institucional', 'cultural', 'deportivo', 'otro'];
-      if (!tiposValidos.includes(tipo)) {
+      if (!TIPOS_VALIDOS.includes(tipo)) {
         return res.status(400).json({ error: 'Tipo de evento inválido' });
       }
 
       const evento = await EventoModel.create({
         nombre,
-        descripcion,
+        descripcion: descripcion ?? '',
         fecha,
         hora,
         lugar,
@@ -95,17 +96,46 @@ export const eventoController = {
         return res.status(403).json({ error: 'No tienes permisos para modificar este evento' });
       }
 
-      const updated = await EventoModel.update(id, {
-        nombre,
-        descripcion,
-        fecha,
-        hora,
-        lugar,
-        tipo,
-        publico
+      const campos = { nombre, descripcion, fecha, hora, lugar, tipo, publico };
+      const enviados = Object.keys(campos).filter((campo) => campos[campo] !== undefined);
+
+      if (enviados.length === 0) {
+        return res.status(400).json({ error: 'No hay campos para actualizar' });
+      }
+
+      for (const campo of ['nombre', 'fecha', 'hora', 'lugar', 'tipo']) {
+        if (campos[campo] !== undefined && (campos[campo] === null || String(campos[campo]).trim() === '')) {
+          return res.status(400).json({ error: `El campo ${campo} no puede estar vacío` });
+        }
+      }
+
+      if (tipo !== undefined && !TIPOS_VALIDOS.includes(tipo)) {
+        return res.status(400).json({ error: 'Tipo de evento inválido' });
+      }
+
+      if (descripcion === null) {
+        return res.status(400).json({ error: 'La descripción no puede ser nula' });
+      }
+
+      if (publico !== undefined && ![0, 1, true, false].includes(publico)) {
+        return res.status(400).json({ error: 'publico debe ser 0 o 1' });
+      }
+
+      const actualizado = await EventoModel.update(id, {
+        nombre: nombre !== undefined ? nombre : evento.nombre,
+        descripcion: descripcion !== undefined ? descripcion : evento.descripcion,
+        fecha: fecha !== undefined ? fecha : evento.fecha,
+        hora: hora !== undefined ? hora : evento.hora,
+        lugar: lugar !== undefined ? lugar : evento.lugar,
+        tipo: tipo !== undefined ? tipo : evento.tipo,
+        publico: publico !== undefined ? publico : evento.publico
       });
 
-      return res.json(updated);
+      if (!actualizado) {
+        return res.status(404).json({ error: 'Evento no encontrado' });
+      }
+
+      return res.json(await EventoModel.findById(id));
     } catch (error) {
       next(error);
     }

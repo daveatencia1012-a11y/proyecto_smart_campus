@@ -1,28 +1,48 @@
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
 
-dotenv.config();
+const JWT_SECRET = process.env.JWT_SECRET;
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+if (!JWT_SECRET) {
+  console.error('[auth] Falta la variable de entorno JWT_SECRET');
+  process.exit(1);
+}
 
-export const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Token requerido' });
+export function authenticate(req, res, next) {
+  const authHeader = req.headers.authorization;
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Token inválido o expirado' });
-    req.user = user;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token no proporcionado' });
+  }
+
+  const token = authHeader.slice(7).trim();
+
+  if (!token) {
+    return res.status(401).json({ error: 'Token no proporcionado' });
+  }
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = {
+      id: payload.id ?? payload.sub,
+      rol: payload.rol ?? payload.role,
+      email: payload.email ?? null
+    };
     next();
-  });
-};
+  } catch (error) {
+    return res.status(401).json({ error: 'Token inválido o expirado' });
+  }
+}
 
-export const authorizeRoles = (...allowedRoles) => {
+export function authorize(...roles) {
   return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ error: 'No autenticado' });
-    if (!allowedRoles.includes(req.user.rol)) {
-      return res.status(403).json({ error: 'No tiene permiso para esta acción' });
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autenticado' });
     }
+
+    if (!roles.length || !roles.includes(req.user.rol)) {
+      return res.status(403).json({ error: 'Acceso denegado: permisos insuficientes' });
+    }
+
     next();
   };
-};
+}
