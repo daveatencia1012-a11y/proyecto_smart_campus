@@ -15,7 +15,7 @@ async function notifyPqrsUpdate(pqrs) {
       mensaje: `Tu PQRS #${pqrs.id} cambió de estado a ${pqrs.estado}`,
       referencia_id: pqrs.id,
       referencia_tipo: 'pqrs'
-    });
+    }, { headers: { 'x-internal-token': process.env.INTERNAL_API_TOKEN } });
   } catch (error) {
     console.error('Error al enviar notificación:', error.message);
   }

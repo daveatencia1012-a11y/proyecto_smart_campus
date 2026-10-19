@@ -56,15 +56,13 @@ export const reservaController = {
 
       try {
         await axios.post(`${NOTIFICATIONS_SERVICE_URL}/api/notificaciones`, {
-          tipo: 'reserva_creada',
+          tipo: 'reserva',
           usuario_id,
-          recurso_id,
-          reserva_id: reserva.id,
-          fecha,
-          hora_inicio,
-          hora_fin,
-          mensaje: `Tu reserva para el recurso ${recurso_id} ha sido creada.`
-        }, {headers: { Authorization: req.headers.authorization }});
+          titulo: 'Reserva creada',
+          mensaje: `Tu reserva para el recurso ${recurso_id} ha sido creada.`,
+          referencia_id: reserva.id,
+          referencia_tipo: 'reserva'
+        }, { headers: { 'x-internal-token': process.env.INTERNAL_API_TOKEN } });
       } catch (notifErr) {
         console.error('Error enviando notificación:', notifErr.message);
       }
@@ -198,13 +196,13 @@ export const reservaController = {
 
       try {
         await axios.post(`${NOTIFICATIONS_SERVICE_URL}/api/notificaciones`, {
-          tipo: 'reserva_cancelada',
+          tipo: 'reserva',
           usuario_id: reserva.usuario_id,
-          recurso_id: reserva.recurso_id,
-          reserva_id: id,
-          motivo_cancelacion: motivo_cancelacion || null,
-          mensaje: `Tu reserva para el recurso ${reserva.recurso_id} ha sido cancelada.`
-        });
+          titulo: 'Reserva cancelada',
+          mensaje: `Tu reserva para el recurso ${reserva.recurso_id} ha sido cancelada.`,
+          referencia_id: id,
+          referencia_tipo: 'reserva'
+        }, { headers: { 'x-internal-token': process.env.INTERNAL_API_TOKEN } });
       } catch (notifErr) {
         console.error('Error enviando notificación:', notifErr.message);
       }

@@ -15,7 +15,7 @@ async function notifyStatusChange(solicitud) {
       mensaje: `Tu solicitud #${solicitud.id} cambió de estado a ${solicitud.estado}`,
       referencia_id: solicitud.id,
       referencia_tipo: 'solicitud'
-    });
+    }, { headers: { 'x-internal-token': process.env.INTERNAL_API_TOKEN } });
   } catch (error) {
     console.error('Error al enviar notificación:', error.message);
   }
