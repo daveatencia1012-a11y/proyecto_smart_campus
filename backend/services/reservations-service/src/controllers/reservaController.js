@@ -1,58 +1,44 @@
-import axios from 'axios';
+import axios from '../config/http.js';
 import { ReservaModel } from '../models/Reserva.js';
-import { DisponibilidadModel } from '../models/Disponibilidad.js';
+import pool from '../config/db.js';
+import { assertFree, withCalendarLocks, interval, positiveId, dateOnly, calendarError } from '../services/calendar.js';
+import { checkResource } from '../services/resources.js';
 
-const RESOURCES_SERVICE_URL = process.env.RESOURCES_SERVICE_URL || 'http://resources-service:3204';
 const NOTIFICATIONS_SERVICE_URL = process.env.NOTIFICATIONS_SERVICE_URL || 'http://notifications-service:3206';
 
-const BUSINESS_HOURS_START = process.env.BUSINESS_HOURS_START || '08:00';
-const BUSINESS_HOURS_END = process.env.BUSINESS_HOURS_END || '22:00';
-
-function validateBusinessHours(hora_inicio, hora_fin) {
-  if (hora_inicio < BUSINESS_HOURS_START || hora_fin > BUSINESS_HOURS_END) {
-    return false;
+function canModify(reserva, user) {
+  if (!reserva) throw calendarError(404, 'Reserva no encontrada');
+  if (!['administrador', 'administrativo'].includes(user.rol) && reserva.usuario_id !== user.id) {
+    throw calendarError(403, 'No tienes permisos para modificar esta reserva');
   }
-  return true;
+  if (reserva.estado === 'cancelada') throw calendarError(400, 'La reserva está cancelada');
+}
+
+function parseFilters(query = {}) {
+  const filters = {};
+  for (const key of ['usuario_id','recurso_id']) if (query[key] !== undefined) filters[key] = positiveId(query[key]);
+  for (const key of ['fecha','fecha_desde','fecha_hasta']) if (query[key] !== undefined) filters[key] = dateOnly(query[key]);
+  if (query.estado !== undefined) {
+    if (!['pendiente','confirmada','cancelada'].includes(query.estado)) throw calendarError(400, 'Estado inválido');
+    filters.estado = query.estado;
+  }
+  if (filters.fecha_desde && filters.fecha_hasta && filters.fecha_desde > filters.fecha_hasta) throw calendarError(400, 'Rango inválido');
+  filters.limit = Number(query.limit ?? 100); filters.offset = Number(query.offset ?? 0);
+  if (!Number.isSafeInteger(filters.limit) || filters.limit < 1 || filters.limit > 100 || !Number.isSafeInteger(filters.offset) || filters.offset < 0 || filters.offset > 10000000) throw calendarError(400, 'Paginación inválida');
+  return filters;
 }
 
 export const reservaController = {
   async createReserva(req, res, next) {
     try {
-      const usuario_id = req.user.id || req.user.usuario_id;
-      const { recurso_id, fecha, hora_inicio, hora_fin } = req.body;
-
-      if (!recurso_id || !fecha || !hora_inicio || !hora_fin) {
-        return res.status(400).json({ error: 'Faltan campos requeridos: recurso_id, fecha, hora_inicio, hora_fin' });
-      }
-
-      if (hora_inicio >= hora_fin) {
-        return res.status(400).json({ error: 'La hora de inicio debe ser menor que la hora de fin' });
-      }
-
-      if (!validateBusinessHours(hora_inicio, hora_fin)) {
-        return res.status(400).json({ error: `El horario debe estar entre ${BUSINESS_HOURS_START} y ${BUSINESS_HOURS_END}` });
-      }
-
-      const recursosResp = await axios.get(`${RESOURCES_SERVICE_URL}/api/recursos/${recurso_id}`, {
-        headers: { Authorization: req.headers.authorization }
+      const usuario_id = req.user.id;
+      const recurso_id = positiveId(req.body?.recurso_id);
+      const horario = interval(req.body ?? {}, true);
+      await checkResource(recurso_id, req.headers.authorization);
+      const reserva = await withCalendarLocks(pool, [{ recurso_id, fecha: horario.fecha }], async conn => {
+        await assertFree(conn, recurso_id, horario);
+        return ReservaModel.create({ usuario_id, recurso_id, ...horario }, conn);
       });
-      const recurso = recursosResp.data;
-
-      if (!recurso || recurso.estado !== 'disponible') {
-        return res.status(400).json({ error: 'El recurso no existe o no está activo' });
-      }
-
-      const overlapReserva = await ReservaModel.checkOverlap(recurso_id, fecha, hora_inicio, hora_fin);
-      if (overlapReserva) {
-        return res.status(409).json({ error: 'Ya existe una reserva en ese horario' });
-      }
-
-      const overlapDisponibilidad = await DisponibilidadModel.checkOverlap(recurso_id, fecha, hora_inicio, hora_fin, null, ['bloqueo', 'mantenimiento']);
-      if (overlapDisponibilidad) {
-        return res.status(409).json({ error: 'El recurso no está disponible en ese horario' });
-      }
-
-      const reserva = await ReservaModel.create({ usuario_id, recurso_id, fecha, hora_inicio, hora_fin });
 
       try {
         await axios.post(`${NOTIFICATIONS_SERVICE_URL}/api/notificaciones`, {
@@ -75,15 +61,10 @@ export const reservaController = {
 
   async getReservas(req, res, next) {
     try {
-      const { usuario_id, recurso_id, fecha, estado } = req.query;
       const userRole = req.user.rol;
       const userId = req.user.id || req.user.usuario_id;
 
-      const filters = {};
-      if (usuario_id) filters.usuario_id = usuario_id;
-      if (recurso_id) filters.recurso_id = recurso_id;
-      if (fecha) filters.fecha = fecha;
-      if (estado) filters.estado = estado;
+      const filters = parseFilters(req.query);
 
       const esGestor = userRole === 'administrador' || userRole === 'administrativo';
       if (!esGestor) {
@@ -99,7 +80,7 @@ export const reservaController = {
 
   async getReservaById(req, res, next) {
     try {
-      const { id } = req.params;
+      const id = positiveId(req.params.id);
       const reserva = await ReservaModel.findById(id);
 
       if (!reserva) {
@@ -121,50 +102,29 @@ export const reservaController = {
 
   async updateReserva(req, res, next) {
     try {
-      const { id } = req.params;
-      const { fecha, hora_inicio, hora_fin } = req.body;
-
-      const reserva = await ReservaModel.findById(id);
-      if (!reserva) {
-        return res.status(404).json({ error: 'Reserva no encontrada' });
-      }
-
-      if (reserva.estado === 'cancelada') {
-        return res.status(400).json({ error: 'No se puede modificar una reserva cancelada' });
-      }
-
-      const esGestor = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
-      const isOwner = reserva.usuario_id === (req.user.id || req.user.usuario_id);
-
-      if (!esGestor && !isOwner) {
-        return res.status(403).json({ error: 'No tienes permisos para modificar esta reserva' });
-      }
-
-      const newFecha = fecha || reserva.fecha;
-      const newHoraInicio = hora_inicio || reserva.hora_inicio;
-      const newHoraFin = hora_fin || reserva.hora_fin;
-
-      if (newHoraInicio >= newHoraFin) {
-        return res.status(400).json({ error: 'La hora de inicio debe ser menor que la hora de fin' });
-      }
-
-      if (!validateBusinessHours(newHoraInicio, newHoraFin)) {
-        return res.status(400).json({ error: `El horario debe estar entre ${BUSINESS_HOURS_START} y ${BUSINESS_HOURS_END}` });
-      }
-
-      const overlapReserva = await ReservaModel.checkOverlap(reserva.recurso_id, newFecha, newHoraInicio, newHoraFin, id);
-      if (overlapReserva) {
-        return res.status(409).json({ error: 'Ya existe una reserva en ese horario' });
-      }
-
-      const overlapDisponibilidad = await DisponibilidadModel.checkOverlap(reserva.recurso_id, newFecha, newHoraInicio, newHoraFin, null, ['bloqueo', 'mantenimiento']);
-      if (overlapDisponibilidad) {
-        return res.status(409).json({ error: 'El recurso no está disponible en ese horario' });
-      }
-
-      await ReservaModel.update(id, { fecha: newFecha, hora_inicio: newHoraInicio, hora_fin: newHoraFin });
-
-      const updated = await ReservaModel.findById(id);
+      const id = positiveId(req.params.id);
+      const snapshot = await ReservaModel.findById(id);
+      canModify(snapshot, req.user);
+      const fecha = req.body?.fecha === undefined ? snapshot.fecha : dateOnly(req.body.fecha);
+      await checkResource(snapshot.recurso_id, req.headers.authorization);
+      const updated = await withCalendarLocks(pool, [
+        { recurso_id: snapshot.recurso_id, fecha: snapshot.fecha },
+        { recurso_id: snapshot.recurso_id, fecha }
+      ], async conn => {
+        const current = await ReservaModel.findById(id, conn, true);
+        canModify(current, req.user);
+        if (current.fecha !== snapshot.fecha || current.recurso_id !== snapshot.recurso_id) {
+          throw calendarError(409, 'La reserva cambió; vuelve a intentarlo');
+        }
+        const horario = interval({
+          fecha,
+          hora_inicio: req.body?.hora_inicio === undefined ? current.hora_inicio : req.body.hora_inicio,
+          hora_fin: req.body?.hora_fin === undefined ? current.hora_fin : req.body.hora_fin
+        }, true);
+        await assertFree(conn, current.recurso_id, horario, id);
+        await ReservaModel.update(id, horario, conn);
+        return ReservaModel.findById(id, conn);
+      });
       return res.json(updated);
     } catch (error) {
       next(error);
@@ -173,26 +133,22 @@ export const reservaController = {
 
   async cancelReserva(req, res, next) {
     try {
-      const { id } = req.params;
-      const { motivo_cancelacion } = req.body;
-
-      const reserva = await ReservaModel.findById(id);
-      if (!reserva) {
-        return res.status(404).json({ error: 'Reserva no encontrada' });
+      const id = positiveId(req.params.id);
+      const motivo_cancelacion = req.body?.motivo_cancelacion ?? null;
+      if (motivo_cancelacion !== null && (typeof motivo_cancelacion !== 'string' || motivo_cancelacion.length > 2000)) {
+        throw calendarError(400, 'Motivo de cancelación inválido');
       }
-
-      if (reserva.estado === 'cancelada') {
-        return res.status(400).json({ error: 'La reserva ya está cancelada' });
-      }
-
-      const esGestor = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
-      const isOwner = reserva.usuario_id === (req.user.id || req.user.usuario_id);
-
-      if (!esGestor && !isOwner) {
-        return res.status(403).json({ error: 'No tienes permisos para cancelar esta reserva' });
-      }
-
-      await ReservaModel.cancel(id, motivo_cancelacion || null);
+      const snapshot = await ReservaModel.findById(id);
+      canModify(snapshot, req.user);
+      const reserva = await withCalendarLocks(pool, [{ recurso_id: snapshot.recurso_id, fecha: snapshot.fecha }], async conn => {
+        const current = await ReservaModel.findById(id, conn, true);
+        canModify(current, req.user);
+        if (current.fecha !== snapshot.fecha || current.recurso_id !== snapshot.recurso_id) {
+          throw calendarError(409, 'La reserva cambió; vuelve a intentarlo');
+        }
+        await ReservaModel.cancel(id, motivo_cancelacion, conn);
+        return ReservaModel.findById(id, conn);
+      });
 
       try {
         await axios.post(`${NOTIFICATIONS_SERVICE_URL}/api/notificaciones`, {
@@ -207,8 +163,7 @@ export const reservaController = {
         console.error('Error enviando notificación:', notifErr.message);
       }
 
-      const updated = await ReservaModel.findById(id);
-      return res.json(updated);
+      return res.json(reserva);
     } catch (error) {
       next(error);
     }
@@ -216,11 +171,20 @@ export const reservaController = {
 
   async countReservas(req, res, next) {
     try {
-      const { fecha } = req.query;
-      const count = await ReservaModel.count(fecha);
-      return res.json({ count });
+      const filters = parseFilters(req.query);
+      const [count, por_estado] = await Promise.all([ReservaModel.count(filters.fecha, filters), ReservaModel.count(filters.fecha, filters, true)]);
+      return res.json({ count, por_estado });
     } catch (error) {
       next(error);
     }
+  },
+  async porFecha(req, res, next) {
+    try { res.json(await ReservaModel.byDate(parseFilters(req.query))); } catch (error) { next(error); }
+  },
+  async countMisReservas(req, res, next) {
+    try {
+      const filters = { ...parseFilters(req.query), usuario_id: req.user.id };
+      res.json({ count: await ReservaModel.count(filters.fecha, filters) });
+    } catch (error) { next(error); }
   }
 };

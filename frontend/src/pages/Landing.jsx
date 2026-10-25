@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/Icon/Icon";
 import uajsLogo from "../assets/uajs-logo.png";
+import useSession from '../hooks/useSession';
+import { homeForRole } from '../services/roles';
 
 const institutionalLinks = [
   { label: "Sitio oficial", href: "https://www.uniajs.edu.co/" },
@@ -50,11 +52,9 @@ const highlights = [
 
 function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, role } = useSession();
 
   useEffect(() => {
-    setIsAuthenticated(localStorage.getItem("uniajs-smart-campus-auth") === "true");
-
     const revealObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -78,7 +78,7 @@ function Landing() {
     };
   }, []);
 
-  const campusPath = isAuthenticated ? "/dashboard" : "/login";
+  const campusPath = isAuthenticated ? homeForRole(role) : '/login';
 
   return (
     <main className="landing">

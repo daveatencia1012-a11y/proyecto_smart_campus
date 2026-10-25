@@ -17,7 +17,7 @@ router.get('/', authenticate, getRecursos);
 router.get('/:id', authenticate, getRecursoById);
 router.put('/:id', authenticate, authorize('administrador', 'administrativo'), updateRecurso);
 router.put('/:id/disponibilidad', authenticate, authorize('administrador', 'administrativo'), updateDisponibilidad);
-router.delete('/:id', authenticate, authorize('administrador'), deleteRecurso);
-router.get('/disponibles/conteo', authenticate, authorize('administrador'), countRecursosDisponibles);
+router.delete('/:id', authenticate, authorize('administrador', 'administrativo'), deleteRecurso);
+router.get('/disponibles/conteo', authenticate, authorize('administrador', 'administrativo'), countRecursosDisponibles);
 
 export default router;

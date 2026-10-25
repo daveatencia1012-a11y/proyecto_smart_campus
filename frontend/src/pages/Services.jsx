@@ -1,23 +1,12 @@
-import { services } from "../data/mockData";
-import ServiceCard from "../components/ServiceCard/ServiceCard";
-
-function Services() {
-  return (
-    <main className="service-page services-page">
-      <section className="service-page__hero">
-        <div>
-          <span className="service-page__eyebrow">SMART CAMPUS</span>
-          <h1>Servicios universitarios</h1>
-          <p>Accede desde un solo lugar a las funcionalidades principales de Uniajs Smart Campus.</p>
-        </div>
-      </section>
-      <section className="panel services-page__catalog">
-        <div className="panel__header"><div><span className="panel__eyebrow">CATÁLOGO</span><h2>Todos los servicios</h2></div><span className="service-page__count">{services.length}</span></div>
-        <div className="services-page__grid">
-          {services.map((service) => <ServiceCard key={service.id} service={service} />)}
-        </div>
-      </section>
-    </main>
-  );
+import useResource from '../hooks/useResource';
+import { listRecords } from '../services/campusService';
+import ServiceCard from '../components/ServiceCard/ServiceCard';
+const load = () => listRecords('services');
+export default function Services() {
+  const { data, loading, error, reload } = useResource(load);
+  return <section className="role-page"><header className="role-page__heading"><div><h1>Servicios del campus</h1><p>Catálogo institucional publicado por la administración.</p></div><button className="button button--secondary" onClick={reload}>Actualizar</button></header>
+    {error && <p className="role-message" role="alert">{error}</p>}{loading && <p>Cargando…</p>}
+    <div className="role-grid">{data?.map(service => <ServiceCard key={service.id} service={{ ...service, name:service.nombre, description:service.descripcion, icon:service.icono }}/>)}</div>
+    {!loading && !error && !data?.length && <p>No hay servicios publicados.</p>}
+  </section>;
 }
-export default Services;

@@ -4,7 +4,8 @@ import { ThemeContext } from "../../context/ThemeContext";
 const STORAGE_KEY = "uajs-smart-campus-theme";
 
 function getInitialTheme() {
-  const savedTheme = localStorage.getItem(STORAGE_KEY);
+  let savedTheme;
+  try { savedTheme = localStorage.getItem(STORAGE_KEY); } catch { /* usar preferencia del sistema */ }
 
   if (savedTheme === "light" || savedTheme === "dark") {
     return savedTheme;
@@ -20,7 +21,7 @@ function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem(STORAGE_KEY, theme);
+    try { localStorage.setItem(STORAGE_KEY, theme); } catch { /* tema en memoria */ }
   }, [theme]);
 
   const value = useMemo(

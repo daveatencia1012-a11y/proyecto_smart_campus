@@ -2,7 +2,7 @@ import { pool } from '../config/db.js';
 
 class Recurso {
   static async findAll(filters = {}) {
-    let query = 'SELECT * FROM recursos WHERE 1=1';
+    let query = 'SELECT * FROM recursos WHERE eliminado_en IS NULL';
     const params = [];
 
     if (filters.tipo) {
@@ -20,7 +20,8 @@ class Recurso {
       params.push(filters.disponible ? 1 : 0);
     }
 
-    query += ' ORDER BY creado_en DESC';
+    query += ' ORDER BY creado_en DESC, id DESC LIMIT ? OFFSET ?';
+    params.push(filters.limit ?? 100, filters.offset ?? 0);
 
     const [rows] = await pool.execute(query, params);
     return rows;
@@ -35,14 +36,14 @@ class Recurso {
   }
 
   static async create(data) {
-    const { codigo, nombre, tipo, ubicacion, estado, descripcion } = data;
+    const { codigo, nombre, tipo, ubicacion, estado, descripcion, disponible = estado === 'disponible' } = data;
 
     const [result] = await pool.execute(
-      'INSERT INTO recursos (codigo, nombre, tipo, ubicacion, estado, descripcion) VALUES (?, ?, ?, ?, ?, ?)',
-      [codigo, nombre, tipo, ubicacion, estado, descripcion || null]
+      'INSERT INTO recursos (codigo, nombre, tipo, ubicacion, estado, descripcion, disponible) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [codigo, nombre, tipo, ubicacion, estado, descripcion || null, Number(disponible)]
     );
 
-    return { id: result.insertId, ...data };
+    return this.findById(result.insertId);
   }
 
   static async update(id, data) {
@@ -85,7 +86,7 @@ class Recurso {
     params.push(id);
 
     await pool.execute(
-      `UPDATE recursos SET ${fields.join(', ')} WHERE id = ?`,
+      `UPDATE recursos SET ${fields.join(', ')} WHERE id = ? AND eliminado_en IS NULL`,
       params
     );
 
@@ -94,7 +95,7 @@ class Recurso {
 
   static async updateAvailability(id, disponible) {
     await pool.execute(
-      'UPDATE recursos SET disponible = ? WHERE id = ?',
+      'UPDATE recursos SET disponible = ? WHERE id = ? AND eliminado_en IS NULL',
       [disponible ? 1 : 0, id]
     );
 
@@ -102,23 +103,23 @@ class Recurso {
   }
 
   static async softDelete(id) {
-    await pool.execute(
-      'DELETE FROM recursos WHERE id = ?',
+    const [result] = await pool.execute(
+      "UPDATE recursos SET eliminado_en = NOW(), disponible = 0, estado = 'fuera_servicio' WHERE id = ? AND eliminado_en IS NULL",
       [id]
     );
-    return true;
+    return result.affectedRows > 0;
   }
 
   static async findUniqueTypes() {
     const [rows] = await pool.execute(
-      'SELECT DISTINCT tipo FROM recursos WHERE tipo IS NOT NULL ORDER BY tipo'
+      'SELECT DISTINCT tipo FROM recursos WHERE tipo IS NOT NULL AND eliminado_en IS NULL ORDER BY tipo'
     );
     return rows.map((row) => row.tipo);
   }
 
   static async countAvailable() {
     const [rows] = await pool.execute(
-      'SELECT COUNT(*) AS total FROM recursos WHERE disponible = 1'
+      "SELECT COUNT(*) AS total FROM recursos WHERE disponible = 1 AND estado = 'disponible' AND eliminado_en IS NULL"
     );
     return rows[0].total;
   }

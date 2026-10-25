@@ -1,16 +1,17 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import useSession from "../../hooks/useSession";
+import { homeForRole } from "../../services/roles";
 
 function AdminRoute() {
   const location = useLocation();
-  const isAuthenticated = !!localStorage.getItem("smart-campus-token");
-  const role = localStorage.getItem("smart-campus-role") || "student";
+  const { isAuthenticated, isAdmin, role } = useSession();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (role !== "administrador") {
-    return <Navigate to="/dashboard" replace />;
+  if (!isAdmin) {
+    return <Navigate to={homeForRole(role)} replace />;
   }
 
   return <Outlet />;

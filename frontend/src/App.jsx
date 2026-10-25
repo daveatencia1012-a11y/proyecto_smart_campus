@@ -7,7 +7,7 @@ import {
 
 import DashboardLayout from "./layouts/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
-import Dashboard from "./pages/Dashboard";
+import RoleDashboard from './pages/RoleDashboard';
 import Events from "./pages/Events";
 import Login from "./pages/Login";
 import Notifications from "./pages/Notifications";
@@ -23,10 +23,12 @@ import ServiceDetail from "./pages/ServiceDetail";
 import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
-import AdminModule from "./pages/admin/AdminModule";
+import AdministrationModule from './pages/AdministrationModule';
+import ManagementModule from './pages/ManagementModule';
+import RoleRoute from './components/RoleRoute/RoleRoute';
+import { STAFF } from './services/roles';
 import AdminRoute from "./components/AdminRoute/AdminRoute";
 import Landing from "./pages/Landing";
-import Home from "./pages/Home";
 
 function App() {
   return (
@@ -39,11 +41,15 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             
-            <Route path="/home" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/home" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<RoleDashboard />} />
+            <Route element={<RoleRoute roles={STAFF} />}>
+              <Route path="/gestion" element={<RoleDashboard operational />} />
+              <Route path="/gestion/:module" element={<ManagementModule />} />
+            </Route>
             <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<AdminModule />} />
-              <Route path="/admin/:module" element={<AdminModule />} />
+              <Route path="/admin" element={<RoleDashboard operational />} />
+              <Route path="/admin/:module" element={<AdministrationModule />} />
             </Route>
             <Route path="/services" element={<Services />} />
             <Route path="/services/:id" element={<ServiceDetail />} />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useTheme from "../hooks/useTheme";
 import heroImage from "../assets/hero.png";
@@ -6,22 +6,26 @@ import uajsLogo from "../assets/uajs-logo.png";
 import Icon from "../components/Icon/Icon";
 import LoadingScreen from "../components/LoadingScreen/LoadingScreen";
 import { login as apiLogin } from "../services/authService";
+import { getRole } from "../services/session";
+import useSession from "../hooks/useSession";
+import { homeForRole } from '../services/roles';
 
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isEnteringCampus, setIsEnteringCampus] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
 
-    useEffect(() => {
-    if (localStorage.getItem("smart-campus-token")) {
-      const role = localStorage.getItem("smart-campus-role") || "student";
-      navigate(role === "administrador" ? "/admin" : "/dashboard", { replace: true });
+  const { isAuthenticated, role } = useSession();
+  const initialSession = useRef({ isAuthenticated, role });
+
+  useEffect(() => {
+    if (initialSession.current.isAuthenticated) {
+      navigate(homeForRole(initialSession.current.role), { replace: true });
     }
   }, [navigate]);
 
@@ -33,11 +37,11 @@ function Login() {
     }));
   };
 
-    const handleSubmit = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const email = form.email.trim();
-    const password = form.password.trim();
+    const password = form.password;
 
     if (!email || !password) {
       setError("Ingresa tu correo institucional y contraseña para continuar.");
@@ -58,8 +62,8 @@ function Login() {
       setIsEnteringCampus(true);
 
       window.setTimeout(() => {
-        const role = localStorage.getItem("smart-campus-role") || "estudiante";
-        const destination = location.state?.from?.pathname || (role === "administrador" ? "/admin" : "/dashboard"); 
+        const currentRole = getRole();
+        const destination = location.state?.from?.pathname || homeForRole(currentRole);
         navigate(destination, { replace: true });
       }, 2800);
     } catch (err) {
@@ -186,14 +190,7 @@ function Login() {
             </label>
 
             <div className="login-form__options">
-              <label className="login-check">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(event) => setRemember(event.target.checked)}
-                />
-                <span>Recordarme</span>
-              </label>
+              <span className="login-check">Acceso personal por rol</span>
               <button type="button" className="login-link" onClick={() => setError("La recuperación de acceso estará disponible cuando se conecte el servicio de autenticación.")}>¿Olvidaste tu contraseña?</button>
             </div>
 

@@ -8,7 +8,8 @@ const STAFF = ['administrador', 'administrativo'];
 
 router.post('/', authenticate, authorize('estudiante', 'docente', ...STAFF), solicitudController.createSolicitud);
 router.get('/', authenticate, authorize(...STAFF), solicitudController.getSolicitudes);
-router.get('/conteo', authenticate, authorize('administrador'), solicitudController.countSolicitudes);
+router.get('/conteo', authenticate, authorize(...STAFF), solicitudController.countSolicitudes);
+router.get('/mis/conteo', authenticate, solicitudController.countMisSolicitudes);
 router.get('/mis', authenticate, solicitudController.getMisSolicitudes);
 router.get('/:id', authenticate, solicitudController.getSolicitudById);
 router.put('/:id', authenticate, authorize(...STAFF), solicitudController.updateSolicitud);

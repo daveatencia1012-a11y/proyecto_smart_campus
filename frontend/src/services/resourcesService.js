@@ -1,4 +1,4 @@
-import { get } from "./api";
+import { get, getAll } from "./api";
 
 function transformResource(raw) {
   return {
@@ -20,7 +20,7 @@ export async function getResources(filters = {}) {
   if (filters.estado) params.append("estado", filters.estado);
   if (filters.disponible !== undefined) params.append("disponible", filters.disponible);
   const query = params.toString();
-  const data = await get(`/api/recursos${query ? `?${query}` : ""}`);
+  const data = await getAll(`/api/recursos${query ? `?${query}` : ""}`);
   return Array.isArray(data) ? data.map(transformResource) : [];
 }
 

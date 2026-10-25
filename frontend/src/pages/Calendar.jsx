@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { events, reservations } from "../data/mockData";
-import useLocalStorage from "../hooks/useLocalStorage";
+import useResource from '../hooks/useResource';
+import { getReservations } from '../services/reservationsService';
+import { listRecords, dateKey } from '../services/campusService';
 import Icon from "../components/Icon/Icon";
 
 const monthNames = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -13,8 +14,6 @@ function toReservationDate(value) {
 }
 
 function Calendar() {
-  const [storedReservations] = useLocalStorage("uajs_reservations", reservations);
-  const [storedEvents] = useLocalStorage("uajs_events", events);
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState(
@@ -43,6 +42,16 @@ function Calendar() {
     }
     return cells;
   }, [cursor]);
+
+  const load = useCallback(async () => {
+    const format = date => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    const range = { fecha_desde:format(days[0].date), fecha_hasta:format(days.at(-1).date) };
+    const [reservations, events] = await Promise.all([getReservations(range), listRecords('events', range)]);
+    return { reservations, events };
+  }, [days]);
+  const { data, loading, error, reload } = useResource(load);
+  const storedReservations = useMemo(() => (data?.reservations || []).filter(row => row.status !== 'CANCELADA'), [data]);
+  const storedEvents = useMemo(() => (data?.events || []).map(row => ({ ...row, date:dateKey(row.fecha), title:row.nombre, time:row.hora, location:row.lugar })), [data]);
 
   const itemsByDate = useMemo(() => {
     const map = {};
@@ -92,6 +101,8 @@ function Calendar() {
         </div>
       </section>
 
+      {error && <p className="role-message" role="alert">{error} <button onClick={reload}>Reintentar</button></p>}
+      {loading && <p role="status">Cargando agenda real…</p>}
       <section className="calendar-page__layout">
         <article className="panel calendar">
           <div className="calendar__toolbar">

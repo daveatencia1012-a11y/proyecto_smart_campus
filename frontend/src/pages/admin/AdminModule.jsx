@@ -64,7 +64,7 @@ function AdminModule(){
   const [users,setUsers]=useState(usersSeed.map(x=>({id:x[0],name:x[1],email:x[2],role:x[3],program:x[4],status:x[5]})));
   const [requests,setRequests]=useState(requestsSeed.map(x=>({id:x[0],type:x[1],dep:x[2],priority:x[3],status:x[4],responsible:x[5]})));
   const [resources,setResources]=useState(resourcesSeed.map(x=>({id:x[0],name:x[1],type:x[2],location:x[3],status:x[4]})));
-  const [query,setQuery]=useState(""); const [toast,setToast]=useState("");
+   const [query,setQuery]=useState(""); const [,setToast]=useState("");
   const [modal,setModal]=useState(false);
   const info=modules[key]||modules.analytics;
   const notify=(m)=>{setToast(m);setTimeout(()=>setToast(""),2200)};

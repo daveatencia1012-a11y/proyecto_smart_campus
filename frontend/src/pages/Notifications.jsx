@@ -1,70 +1,21 @@
-import { useMemo, useState } from "react";
-import { notifications as initialNotifications } from "../data/mockData";
-import useLocalStorage from "../hooks/useLocalStorage";
-import Icon from "../components/Icon/Icon";
+import { useState } from 'react';
+import useResource from '../hooks/useResource';
+import { listNotifications, markNotification, markAllNotifications, removeNotification } from '../services/campusService';
 
-const filters = ["TODAS", "NO LEÍDAS", "LEÍDAS"];
-
-function Notifications() {
-  const [notifications, setNotifications] = useLocalStorage("uajs_notifications", initialNotifications);
-  const [filter, setFilter] = useState("TODAS");
-
-  const filtered = useMemo(() => notifications.filter((item) =>
-    filter === "TODAS" || (filter === "NO LEÍDAS" && !item.read) || (filter === "LEÍDAS" && item.read)
-  ), [notifications, filter]);
-
-  const unread = notifications.filter((item) => !item.read).length;
-
-  const markRead = (id) => setNotifications((current) => current.map((item) => item.id === id ? { ...item, read: true } : item));
-  const markAll = () => setNotifications((current) => current.map((item) => ({ ...item, read: true })));
-
-  return (
-    <main className="service-page notifications-page">
-      <section className="service-page__hero">
-        <div>
-          <span className="service-page__eyebrow">CENTRO DE COMUNICACIONES</span>
-          <h1>Notificaciones</h1>
-          <p>Consulta cambios de estado, confirmaciones, alertas y comunicaciones relevantes para tu experiencia universitaria.</p>
-        </div>
-        <button className="service-page__hero-action" type="button" onClick={markAll}><Icon name="check" size={17} /> Marcar todas como leídas</button>
-      </section>
-
-      <section className="notifications-page__summary">
-        <article className="notification-summary panel"><Icon name="notifications" size={22} /><div><strong>{unread}</strong><p>sin leer</p></div></article>
-        <article className="notification-summary panel"><Icon name="check" size={17} /><div><strong>{notifications.length}</strong><p>notificaciones</p></div></article>
-        <article className="notification-summary panel"><Icon name="spark" size={22} /><div><strong>24h</strong><p>actividad reciente</p></div></article>
-      </section>
-
-      <section className="service-page__toolbar panel">
-        <div className="service-page__filters">
-          {filters.map((item) => (
-            <button key={item} type="button"
-              className={filter === item ? "service-page__filter service-page__filter--active" : "service-page__filter"}
-              onClick={() => setFilter(item)}>
-              {item}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="service-page__section">
-        <div className="service-page__section-heading"><div><span className="panel__eyebrow">ACTIVIDAD</span><h2>Recientes</h2></div><span className="service-page__count">{filtered.length}</span></div>
-        <div className="notifications-page__list">
-          {filtered.map((item) => (
-            <article className={`notification-card panel ${item.read ? "" : "notification-card--unread"}`} key={item.id}>
-              <span className={`notification-card__icon notification-card__icon--${item.type}`}><Icon name={item.icon} size={19} /></span>
-              <div className="notification-card__content">
-                <div className="notification-card__top"><h3>{item.title}</h3>{!item.read && <span className="notification-card__dot" />}</div>
-                <p>{item.message}</p>
-                <small>{item.time}</small>
-              </div>
-              {!item.read && <button type="button" onClick={() => markRead(item.id)}>Marcar leída</button>}
-            </article>
-          ))}
-        </div>
-      </section>
-    </main>
-  );
+export default function Notifications() {
+  const { data, loading, error, reload } = useResource(listNotifications);
+  const [message, setMessage] = useState('');
+  const [filter, setFilter] = useState('todas');
+  async function act(fn) {
+    setMessage('');
+    try { await fn(); await reload(); }
+    catch (err) { if (!err.cancelled) setMessage(err.message); }
+  }
+  const rows = (data || []).filter(row => filter === 'todas' || filter === 'pendientes' && !row.leida || filter === 'leidas' && row.leida);
+  return <section className="role-page"><header className="role-page__heading"><div><h1>Mis notificaciones</h1><p>Comunicaciones asociadas exclusivamente a tu usuario.</p></div><div className="role-actions"><button className="button button--secondary" onClick={() => act(markAllNotifications)}>Marcar todas como leídas</button><button className="button button--secondary" onClick={reload}>Actualizar</button></div></header>
+    <label>Mostrar<select value={filter} onChange={e => setFilter(e.target.value)}><option value="todas">Todas</option><option value="pendientes">Sin leer</option><option value="leidas">Leídas</option></select></label>
+    {(error || message) && <p className="role-message" role="status">{error || message}</p>}{loading && <p>Cargando…</p>}
+    {rows.map(row => <article key={row.id} className={`panel role-card ${row.leida ? '' : 'role-notification'}`}><h2>{row.titulo}</h2><p>{row.mensaje}</p><small>{new Date(row.fecha_creacion).toLocaleString('es-CO')} · {row.leida ? 'Leída' : 'Sin leer'}</small><div className="role-actions">{!row.leida && <button className="button button--secondary" onClick={() => act(() => markNotification(row.id))}>Marcar como leída</button>}<button className="button button--secondary" onClick={() => act(() => removeNotification(row.id))}>Eliminar</button></div></article>)}
+    {!loading && !rows.length && <p className="panel role-empty">No hay notificaciones.</p>}
+  </section>;
 }
-
-export default Notifications;

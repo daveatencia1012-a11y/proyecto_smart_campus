@@ -19,9 +19,10 @@ app.get('/health', (req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: err.message || 'Error interno del servidor'
+  const status = err.status || err.statusCode || 500;
+  if (status >= 500) console.error(`[requests-service] ${err.code || err.name || 'ERROR'}`);
+  res.status(status).json({
+    error: status >= 500 ? 'Error interno del servidor' : err.message
   });
 });
 

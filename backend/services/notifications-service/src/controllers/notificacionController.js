@@ -55,7 +55,9 @@ export async function crearNotificacion(req, res, next) {
 export async function listarNotificaciones(req, res, next) {
   try {
     const usuario_id = req.user.id;
-    const notificaciones = await Notificacion.listarPorUsuario(usuario_id);
+    const limit = Number(req.query.limit ?? 100), offset = Number(req.query.offset ?? 0);
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100 || !Number.isSafeInteger(offset) || offset < 0 || offset > 10000000) return res.status(400).json({ error: 'Paginación inválida' });
+    const notificaciones = await Notificacion.listarPorUsuario(usuario_id, limit, offset);
     return res.status(200).json({ notificaciones });
   } catch (err) {
     next(err);

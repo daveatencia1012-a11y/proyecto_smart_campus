@@ -128,7 +128,7 @@ function Reservations() {
                 <span>Recurso o espacio</span>
                 <select name="recurso_id" value={form.recurso_id} onChange={handleChange}>
                   <option value="">Selecciona un recurso</option>
-                  {resourcesList.filter((r) => r.status === "DISPONIBLE").map((r) => (
+                  {resourcesList.filter((r) => r.status === "DISPONIBLE" && r.available).map((r) => (
                     <option key={r.id} value={r.id}>{r.name} · {r.location}</option>
                   ))}
                 </select>

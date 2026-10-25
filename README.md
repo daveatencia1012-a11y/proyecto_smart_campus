@@ -62,44 +62,42 @@ A partir del código actualmente disponible en el repositorio se identifican las
 
 - Landing page.
 - Inicio de sesión.
-- Rutas protegidas.
-- Control de acceso para módulos administrativos.
-- Dashboard.
+- Rutas protegidas y guard por rol (`estudiante`, `docente`, `administrativo`, `administrador`).
+- Panel propio para cada rol; `/gestion` para administrativo/administrador y `/admin` solo para administrador.
+- Dashboard con indicadores reales de cada rol.
 - Navegación mediante React Router.
 
 ### Servicios universitarios
 
-- Visualización de servicios.
-- Consulta del detalle de un servicio.
-- Gestión de solicitudes.
-- Consulta del detalle de solicitudes.
-- Creación y eliminación de solicitudes desde el frontend.
-- Seguimiento de estados de solicitudes.
-- Gestión de reservas.
-- Consulta del detalle de reservas.
-- Creación, actualización y cancelación de reservas.
-- Consulta de recursos.
-- Gestión de eventos.
-- Calendario.
-- PQRS.
-- Notificaciones.
-- Perfil de usuario.
-- Configuración.
+- Catálogo institucional de servicios y detalle de cada servicio.
+- Gestión de solicitudes propias; atención por administrativo/administrador con transiciones de estado e historial.
+- Creación y eliminación de solicitudes propias desde el frontend.
+- Seguimiento real de estados de solicitudes.
+- Reservas con confirmación automática cuando el recurso y el horario están disponibles.
+- Consulta, actualización y cancelación de reservas según rol y propiedad.
+- Consulta de recursos, alta/edición y baja lógica por personal gestor.
+- Eventos: docente crea y edita los propios; administrativo consulta; administrador gestiona y puede dar de baja.
+- PQRS con respuesta obligatoria antes de responder/cerrar.
+- Calendario con reservas y eventos reales del período consultado.
+- Notificaciones personales, con lectura y eliminación.
+- Perfil propio.
+- Preferencias visuales personales.
 - Módulo de ayuda.
-- Módulos administrativos.
+- Módulos de gestión operativa, reportes, usuarios, roles, catálogo, configuración institucional y monitoreo.
 
 ### Comportamiento del frontend
 
 El frontend incluye:
 
-- Manejo de estados con `useState`.
+- Manejo de estados con `useState` y hooks de carga reutilizables.
 - Efectos mediante `useEffect`.
-- Custom hooks, entre ellos `useTheme`.
-- Estados de carga y error.
-- Formularios con validaciones.
-- Búsqueda y filtrado de información.
-- Componentes reutilizables.
+- Custom hooks, entre ellos `useTheme`, `useSession`, `useResource` y `useInstitution`.
+- Estados de carga, error y confirmación.
+- Formularios con validaciones del lado del cliente; el backend valida nuevamente.
+- Búsqueda, filtrado y exportación CSV de datos operativos.
+- Componentes reutilizables y tablas/registros compartidos.
 - Convenciones de nombres CSS compatibles con metodología BEM.
+- Sesión centralizada en `services/session.js`; los datos operativos no se guardan en `localStorage`.
 
 ---
 ## Arquitectura
@@ -110,7 +108,7 @@ La arquitectura implementada se divide principalmente en tres niveles.
 
 Aplicación construida con React y Vite.
 
-El archivo `vite.config.js` configura un proxy para enviar las peticiones que comienzan por `/api` hacia el API Gateway:
+El archivo `vite.config.js` configura un proxy para enviar las peticiones que comienzan por `/api` hacia el API Gateway. El destino se puede cambiar con `VITE_API_TARGET` (por defecto `http://localhost:3200`):
 
 ```text
 Frontend
@@ -494,18 +492,27 @@ CREATE DATABASE IF NOT EXISTS events_db;
 CREATE DATABASE IF NOT EXISTS notifications_db;
 ```
 
-### Importante
+### Esquema y migraciones
 
-La revisión actual del repositorio permite confirmar las conexiones a MySQL, pero **no permite documentar de forma confiable un procedimiento completo de migraciones, creación de tablas o seeders**.
+El esquema se inicializa con:
 
-Por esta razón, este README no inventa estructuras SQL ni datos iniciales.
+```text
+backend/sql/init.sql
+backend/sql/migrations/001-calendar.sql
+backend/sql/migrations/002-role-interfaces.sql
+backend/sql/provision-users.sh
+```
 
-Para que la instalación pueda reproducirse desde cero, el equipo debe documentar o incorporar los scripts utilizados para crear:
+`init.sql` crea las bases, tablas y el administrador inicial. Las migraciones
+son aditivas y reejecutables: 001 añade el protocolo de bloqueo del calendario y
+002 añade configuración institucional, catálogo de servicios, alcance
+informativo de permisos, baja lógica de recursos y el estado por defecto
+`confirmada` para reservas nuevas. `provision-users.sh` crea las cuentas MySQL
+`campus_*` con permisos limitados a su propia base.
 
-- Tablas.
-- Relaciones.
-- Datos iniciales o de prueba.
-- Usuarios de demostración, si aplican.
+En Docker Compose, un volumen nuevo ejecuta todo automáticamente. Un volumen
+existente requiere respaldo y aplicar las migraciones en orden; los pasos
+detallados están en `backend/SECURITY-UPGRADE.md`.
 
 ---
 
@@ -618,10 +625,11 @@ Entre las rutas del frontend se encuentran:
 /
  /landing
  /login
- /home
- /dashboard
- /admin
- /admin/:module
+ /dashboard        (estudiante, docente)
+ /gestion          (administrativo, administrador)
+ /gestion/:module  (solicitudes, reservas, recursos, pqrs, reportes)
+ /admin            (solo administrador)
+ /admin/:module    (users, roles, services, settings, monitoring, analytics, events, ...)
  /services
  /services/:id
  /requests
@@ -637,6 +645,9 @@ Entre las rutas del frontend se encuentran:
  /settings
  /help
 ```
+
+`/home` redirige a `/dashboard`. El guard de rutas solo controla la navegación:
+cada endpoint vuelve a validar el rol y la propiedad del registro.
 
 > No se incluyen credenciales de acceso en este README porque no se identificaron credenciales de demostración que puedan documentarse de forma segura y verificable.
 
@@ -658,12 +669,15 @@ y expone actualmente los siguientes prefijos:
 | `/api/usuarios` | Users Service |
 | `/api/dashboard` | Users Service |
 | `/api/roles` | Users Service |
+| `/api/permisos` | Users Service |
+| `/api/configuracion` | Users Service |
 | `/api/solicitudes` | Requests Service |
 | `/api/pqrs` | Requests Service |
 | `/api/reservas` | Reservations Service |
 | `/api/disponibilidad` | Reservations Service |
 | `/api/recursos` | Resources Service |
 | `/api/tipos` | Resources Service |
+| `/api/servicios` | Resources Service |
 | `/api/eventos` | Events Service |
 | `/api/tipos-evento` | Events Service |
 | `/api/notificaciones` | Notifications Service |
@@ -676,12 +690,15 @@ y expone actualmente los siguientes prefijos:
 
 | Método | Endpoint | Descripción |
 | --- | --- | --- |
-| GET | `/api/solicitudes` | Consultar solicitudes |
-| GET | `/api/solicitudes/:id` | Consultar una solicitud |
-| POST | `/api/solicitudes` | Crear una solicitud |
-| PUT | `/api/solicitudes/:id` | Actualizar una solicitud |
-| PUT | `/api/solicitudes/:id/estado` | Cambiar su estado |
-| DELETE | `/api/solicitudes/:id` | Eliminar una solicitud |
+| GET | `/api/solicitudes` | Consultar solicitudes (personal gestor) |
+| GET | `/api/solicitudes/mis` | Consultar solicitudes propias |
+| GET | `/api/solicitudes/:id` | Consultar una solicitud (propietario o personal gestor) |
+| POST | `/api/solicitudes` | Crear una solicitud propia |
+| PUT | `/api/solicitudes/:id` | Actualizar campos permitidos |
+| PUT | `/api/solicitudes/:id/estado` | Cambiar estado con transición válida |
+| DELETE | `/api/solicitudes/:id` | Eliminar (administrador) |
+| GET | `/api/solicitudes/conteo` | Conteo y agrupación por estado (personal gestor) |
+| GET | `/api/solicitudes/mis/conteo` | Conteo propio |
 
 Los estados manejados en la interfaz incluyen:
 
@@ -703,7 +720,23 @@ CERRADA
 | POST | `/api/reservas` | Crear una reserva |
 | PUT | `/api/reservas/:id` | Actualizar una reserva |
 | PUT | `/api/reservas/:id/cancelar` | Cancelar una reserva |
+| GET | `/api/reservas?fecha_desde=...&fecha_hasta=...` | Consultar reservas por rango |
 | GET | `/api/recursos` | Consultar recursos utilizados durante el proceso de reserva |
+
+### Catálogo, configuración y reportes
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| GET | `/api/roles` | Roles fijos del sistema (administrador) |
+| GET | `/api/permisos` | Catálogo informativo de permisos por rol (administrador) |
+| GET | `/api/servicios` | Catálogo de servicios activos |
+| POST/PUT/DELETE | `/api/servicios...` | Administración del catálogo (administrador) |
+| GET | `/api/configuracion` | Configuración institucional |
+| PUT | `/api/configuracion` | Editar nombre, correo y mensaje institucional (administrador) |
+| GET | `/api/usuarios/responsables` | Directorio mínimo para asignar solicitudes (personal gestor) |
+| GET | `/api/dashboard/personal` | Indicadores propios |
+| GET | `/api/dashboard/operativo` | Indicadores operativos agregados (personal gestor) |
+| GET | `/api/dashboard/salud` | Estado de los componentes (administrador) |
 
 ---
 
@@ -746,18 +779,24 @@ curl http://localhost:3200/health
 
 ### Frontend
 
-El proyecto dispone de verificación con ESLint:
+El proyecto dispone de verificación con ESLint y de compilación de producción:
 
 ```bash
 cd frontend
-pnpm run dev
+pnpm lint
+pnpm build
 ```
 
-También puede comprobarse que el frontend compile correctamente:
+### Backend
 
 ```bash
-pnpm run dev
+pnpm --dir backend test
+pnpm --dir backend run test:mysql
 ```
+
+La primera suite no necesita MySQL ni Docker. La segunda crea un MySQL 8
+efímero y recorre los cuatro roles por HTTP a través del gateway y los seis
+servicios reales. Ninguna usa el `.env` ni el volumen del proyecto.
 
 ### Health checks
 

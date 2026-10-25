@@ -8,6 +8,7 @@ const STAFF = ['administrador', 'administrativo'];
 
 router.post('/', authenticate, authorize('estudiante', 'docente', ...STAFF), pqrsController.createPqrs);
 router.get('/', authenticate, authorize(...STAFF), pqrsController.getPqrsList);
+router.get('/conteo', authenticate, authorize(...STAFF), pqrsController.countPqrs);
 router.get('/mis', authenticate, pqrsController.getMisPqrs);
 router.get('/:id', authenticate, pqrsController.getPqrsById);
 router.put('/:id', authenticate, authorize(...STAFF), pqrsController.updatePqrs);

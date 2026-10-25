@@ -1,15 +1,6 @@
 import { Link } from "react-router-dom";
 import Icon from "../Icon/Icon";
 
-const serviceRoutes = {
-  Solicitudes: "/requests",
-  Reservas: "/reservations",
-  Recursos: "/resources",
-  Eventos: "/events",
-  Notificaciones: "/notifications",
-  PQRS: "/pqrs",
-};
-
 function ServiceCard({ service }) {
   const route = `/services/${service.id}`;
 

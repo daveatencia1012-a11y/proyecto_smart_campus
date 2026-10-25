@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import roleRoutes from './routes/roles.js';
 import dashboardRoutes from './routes/dashboard.js';
+import configuracionRoutes from './routes/configuracion.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', userRoutes);
 app.use('/api', roleRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/configuracion', configuracionRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
