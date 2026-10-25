@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "../components/Header/Header";
 import Sidebar from "../components/Sidebar/Sidebar";
@@ -10,6 +10,14 @@ function DashboardLayout() {
   const { user, role } = useSession();
 
   const closeSidebar = () => setIsSidebarOpen(false);
+
+  // Aplica las preferencias de interfaz guardadas en Configuración al iniciar sesión.
+  useEffect(() => {
+    let preferences;
+    try { preferences = JSON.parse(localStorage.getItem(`uajs-ui-${user?.id}`) || '{}'); } catch { preferences = {}; }
+    document.documentElement.dataset.compact = preferences.compactMode ? 'true' : 'false';
+    document.documentElement.dataset.reducedMotion = preferences.reducedMotion ? 'true' : 'false';
+  }, [user?.id]);
 
   return (
     <InstitutionProvider key={`${user?.id}:${role}`}><div className="layout">

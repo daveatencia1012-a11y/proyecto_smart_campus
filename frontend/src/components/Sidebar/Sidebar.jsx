@@ -17,7 +17,6 @@ const navigation = [
 ];
 
 const adminNavigation = [
-  { to: "/admin", icon: "layout", label: "Centro de control" },
   { to: "/admin/analytics", icon: "services", label: "Analítica" },
   { to: "/admin/users", icon: "profile", label: "Usuarios" },
   { to: "/admin/roles", icon: "shield", label: "Roles y permisos" },
@@ -28,7 +27,6 @@ const adminNavigation = [
 ];
 
 const managementNavigation = [
-  { to:'/gestion', icon:'layout', label:'Resumen operativo' },
   { to:'/gestion/solicitudes', icon:'requests', label:'Atender solicitudes' },
   { to:'/gestion/reservas', icon:'reservations', label:'Gestionar reservas' },
   { to:'/gestion/recursos', icon:'resources', label:'Administrar recursos' },
@@ -93,7 +91,7 @@ function Sidebar({ isOpen, onClose }) {
         <div className="sidebar__scroll">
           <div className="sidebar__label">MENÚ PRINCIPAL</div>
           <nav className="sidebar__nav" aria-label="Menú principal">
-            {navigation.map(item => renderLink(item.to === '/dashboard' ? { ...item, to:homeForRole(role), label:role === 'docente' ? 'Panel docente' : 'Mi Campus' } : item))}
+            {navigation.map(renderLink)}
           </nav>
 
           {isStaff && <><div className="sidebar__divider"/><div className="sidebar__label">GESTIÓN OPERATIVA</div><nav className="sidebar__nav" aria-label="Gestión operativa">{managementNavigation.map(renderLink)}</nav></>}

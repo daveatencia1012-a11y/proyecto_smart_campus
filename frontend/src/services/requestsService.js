@@ -21,6 +21,9 @@ function transformRequest(raw) {
     status: (raw.estado || "REGISTRADA").replaceAll("_", " "),
     date: formatRequestDate(raw.fecha_creacion),
     responsible: raw.responsable_id ? `Responsable #${raw.responsable_id}` : "Pendiente de asignación",
+    responsibleId: raw.responsable_id ?? null,
+    rawStatus: raw.estado || "REGISTRADA",
+    transitions: Array.isArray(raw.transiciones_permitidas) ? raw.transiciones_permitidas : [],
     usuario_id: raw.usuario_id,
     history: Array.isArray(history) ? history : [],
   };
