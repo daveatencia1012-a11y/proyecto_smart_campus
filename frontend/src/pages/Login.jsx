@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import useTheme from "../hooks/useTheme";
 import heroImage from "../assets/hero.png";
 import uajsLogo from "../assets/uajs-logo.png";
@@ -12,7 +12,6 @@ import { homeForRole } from '../services/roles';
 
 function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,9 +61,9 @@ function Login() {
       setIsEnteringCampus(true);
 
       window.setTimeout(() => {
-        const currentRole = getRole();
-        const destination = location.state?.from?.pathname || homeForRole(currentRole);
-        navigate(destination, { replace: true });
+        // Siempre se entra al dashboard de inicio, sin volver a la página donde
+        // estaba la sesión anterior (aunque sea otro rol o el mismo usuario).
+        navigate(homeForRole(getRole()), { replace: true });
       }, 2800);
     } catch (err) {
       setIsLoading(false);
