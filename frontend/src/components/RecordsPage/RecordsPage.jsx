@@ -141,7 +141,7 @@ export default function RecordsPage({ kind, operational = false }) {
         const removable = kind === 'resources' ? operational && staff : admin && ['users','services','events'].includes(kind);
         return <tr key={row.id}>{visibleColumns.map(key => <td key={key}>{display(key, row[key])}</td>)}<td><div className="role-actions">
           <button className="table-action" onClick={() => setDetail(row)}>Ver</button>
-          {['requests','reservations'].includes(kind) && <Link to={`/${kind}/${row.id}`}>Detalle</Link>}
+          {['requests','reservations'].includes(kind) && <Link className="table-action" to={`/${kind}/${row.id}`} state={{ from: operational ? window.location.pathname : null }}>Detalle</Link>}
           {editable && !(kind === 'reservations' && row.estado === 'cancelada') && <button className="table-action" disabled={saving} onClick={() => open('edit', row)}>Editar</button>}
           {kind === 'requests' && operational && row.transiciones_permitidas?.length > 0 && <button className="table-action" onClick={() => open('transition', row)}>Cambiar estado</button>}
           {kind === 'reservations' && operational && row.estado !== 'cancelada' && <button className="table-action" disabled={saving} onClick={() => action(() => cancelReservation(row.id), '¿Cancelar esta reserva?')}>Cancelar</button>}

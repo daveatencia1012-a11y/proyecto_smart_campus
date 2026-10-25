@@ -8324,6 +8324,38 @@ a .ui-icon {
   --accent:#53a3d6;
 }
 
+/* Bloque de gestión del detalle de solicitud (solo administrativo y administrador). */
+.request-detail__manage{
+  display:grid;
+  gap:12px;
+  margin-top:22px;
+  padding-top:18px;
+  border-top:1px solid var(--border);
+}
+.request-detail__assign{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  gap:10px;
+}
+.request-detail__assign label{
+  display:grid;
+  flex:1 1 220px;
+  gap:6px;
+  color:var(--text-soft);
+  font-size:12px;
+  font-weight:700;
+}
+.request-detail__assign select{
+  height:42px;
+  padding:0 12px;
+  border:1px solid var(--border-strong);
+  border-radius:12px;
+  background:var(--surface-solid);
+  color:var(--text);
+  font:inherit;
+}
+
 /* Botones de texto en estados vacíos: sin el fondo gris por defecto del navegador. */
 .reservations-page__empty button,
 .requests-page__empty button{
