@@ -3,11 +3,26 @@ import { useEffect, useRef, useState } from "react";
 import ThemeToggle from "../ThemeToggle/ThemeToggle";
 import Icon from "../Icon/Icon";
 import uajsLogo from "../../assets/uajs-logo.png";
+import { logout } from "../../services/authService";
+import useSession from "../../hooks/useSession";
+import { ROLE_LABELS } from '../../services/roles';
+import useInstitution from '../../hooks/useInstitution';
+import useResource from '../../hooks/useResource';
+import { get } from '../../services/api';
+
+const loadUnread = () => get('/api/notificaciones/no-leidas');
 
 function Header({ onMenuClick }) {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
+  const institution = useInstitution();
+  const { data:unread, reload:reloadUnread } = useResource(loadUnread);
+  useEffect(() => {
+    const refresh = () => reloadUnread();
+    window.addEventListener('campus-data-changed', refresh);
+    return () => window.removeEventListener('campus-data-changed', refresh);
+  }, [reloadUnread]);
 
   useEffect(() => {
     const close = (event) => {
@@ -17,23 +32,13 @@ function Header({ onMenuClick }) {
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-   const handleLogout = () => {
-    localStorage.removeItem("smart-campus-token");
-    localStorage.removeItem("smart-campus-user");
-    localStorage.removeItem("smart-campus-role");
+  const handleLogout = () => {
+    logout();
     navigate("/login", { replace: true });
   };
 
-  const role = localStorage.getItem("smart-campus-role") || "student";
-  const isAdmin = role === "administrador";
-    const storedUser = (() => {
-    try {
-      const raw = localStorage.getItem("smart-campus-user");
-      return raw ? JSON.parse(raw).nombre : "Usuario";
-    } catch {
-      return "Usuario";
-    }
-  })();
+  const { user, role, isAdmin } = useSession();
+  const storedUser = user?.nombre || "Usuario";
   const displayName = storedUser.includes("@") ? storedUser.split("@")[0] : storedUser;
   const initials = displayName.split(/[ ._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join("") || "IS";
 
@@ -57,15 +62,7 @@ function Header({ onMenuClick }) {
       </div>
 
       <div className="header__search">
-        <span className="header__search-icon" aria-hidden="true">
-          <Icon name="search" size={18} />
-        </span>
-        <input
-          type="search"
-          placeholder="Buscar en Smart Campus..."
-          aria-label="Buscar en Smart Campus"
-        />
-        <span className="header__search-shortcut">⌘ K</span>
+        <strong>{institution?.config?.nombre_campus || 'UAJS Smart Campus'}</strong>
       </div>
 
       <div className="header__actions">
@@ -77,7 +74,7 @@ function Header({ onMenuClick }) {
           aria-label="Ver notificaciones"
         >
           <Icon name="notifications" size={20} />
-          <span className="header__notification-dot" />
+          {unread?.no_leidas > 0 && <span className="header__notification-dot" />}
         </Link>
 
         <div className="header__profile-wrap" ref={profileRef}>
@@ -90,8 +87,8 @@ function Header({ onMenuClick }) {
           >
             <span className="header__avatar">{initials}</span>
             <span className="header__profile-info">
-              <strong>{isAdmin ? "Administrador" : displayName}</strong>
-              <small>{isAdmin ? "Administrador del sistema" : "Estudiante"}</small>
+              <strong>{displayName}</strong>
+              <small>{ROLE_LABELS[role]}</small>
             </span>
             <Icon name="arrowRight" size={16} className="header__profile-chevron" />
           </button>
@@ -101,8 +98,8 @@ function Header({ onMenuClick }) {
               <div className="profile-menu__header">
                 <span className="profile-menu__avatar">{initials}</span>
                 <div>
-                  <strong>{isAdmin ? "Administrador" : displayName}</strong>
-                  <small>{isAdmin ? "Administrador del sistema" : "Estudiante"}</small>
+                  <strong>{displayName}</strong>
+                  <small>{ROLE_LABELS[role]}</small>
                 </div>
               </div>
               <div className="profile-menu__divider" />

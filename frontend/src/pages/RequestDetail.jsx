@@ -98,27 +98,7 @@ function RequestDetail() {
           <h2>Estado de la solicitud</h2>
 
           <div className="request-detail__timeline">
-            <div className="request-detail__step request-detail__step--done">
-              <span />
-              <div>
-                <strong>Solicitud registrada</strong>
-                <p>Tu solicitud fue recibida correctamente.</p>
-              </div>
-            </div>
-            <div className="request-detail__step request-detail__step--current">
-              <span />
-              <div>
-                <strong>{request.status}</strong>
-                <p>La solicitud se encuentra en seguimiento.</p>
-              </div>
-            </div>
-            <div className="request-detail__step">
-              <span />
-              <div>
-                <strong>Finalizada</strong>
-                <p>Se habilitará cuando el proceso haya terminado.</p>
-              </div>
-            </div>
+            {request.history.length ? request.history.map((entry, index) => <div className="request-detail__step request-detail__step--done" key={`${entry.fecha}-${index}`}><span/><div><strong>{entry.estado?.replaceAll('_',' ')}</strong><p>{new Date(entry.fecha).toLocaleString('es-CO')} · Usuario #{entry.actor_id}</p></div></div>) : <p>Sin historial previo registrado. Estado actual: {request.status}.</p>}
           </div>
         </article>
       </section>

@@ -2,14 +2,17 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "../components/Header/Header";
 import Sidebar from "../components/Sidebar/Sidebar";
+import InstitutionProvider from '../components/InstitutionProvider/InstitutionProvider';
+import useSession from '../hooks/useSession';
 
 function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user, role } = useSession();
 
   const closeSidebar = () => setIsSidebarOpen(false);
 
   return (
-    <div className="layout">
+    <InstitutionProvider key={`${user?.id}:${role}`}><div className="layout">
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={closeSidebar}
@@ -22,7 +25,7 @@ function DashboardLayout() {
           <Outlet />
         </main>
       </div>
-    </div>
+    </div></InstitutionProvider>
   );
 }
 

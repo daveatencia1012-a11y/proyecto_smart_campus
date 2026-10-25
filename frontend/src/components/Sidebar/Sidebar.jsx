@@ -1,6 +1,8 @@
 import { NavLink, Link } from "react-router-dom";
 import Icon from "../Icon/Icon";
 import uajsLogo from "../../assets/uajs-logo.png";
+import useSession from "../../hooks/useSession";
+import { homeForRole, ROLE_LABELS } from '../../services/roles';
 
 const navigation = [
   { to: "/dashboard", icon: "home", label: "Dashboard" },
@@ -19,17 +21,19 @@ const adminNavigation = [
   { to: "/admin/analytics", icon: "services", label: "Analítica" },
   { to: "/admin/users", icon: "profile", label: "Usuarios" },
   { to: "/admin/roles", icon: "shield", label: "Roles y permisos" },
-  { to: "/admin/dependencies", icon: "building", label: "Dependencias" },
   { to: "/admin/services", icon: "services", label: "Servicios" },
-  { to: "/admin/requests", icon: "requests", label: "Solicitudes" },
-  { to: "/admin/reservations", icon: "reservations", label: "Reservas" },
-  { to: "/admin/resources", icon: "resources", label: "Recursos" },
   { to: "/admin/events", icon: "events", label: "Eventos" },
-  { to: "/admin/notifications", icon: "notifications", label: "Notificaciones" },
-  { to: "/admin/pqrs", icon: "pqrs", label: "PQRS" },
   { to: "/admin/monitoring", icon: "monitor", label: "Estado del sistema" },
-  { to: "/admin/audit", icon: "file", label: "Auditoría" },
   { to: "/admin/settings", icon: "settings", label: "Configuración admin" },
+];
+
+const managementNavigation = [
+  { to:'/gestion', icon:'layout', label:'Resumen operativo' },
+  { to:'/gestion/solicitudes', icon:'requests', label:'Atender solicitudes' },
+  { to:'/gestion/reservas', icon:'reservations', label:'Gestionar reservas' },
+  { to:'/gestion/recursos', icon:'resources', label:'Administrar recursos' },
+  { to:'/gestion/pqrs', icon:'pqrs', label:'Atender PQRS' },
+  { to:'/gestion/reportes', icon:'file', label:'Reportes operativos' }
 ];
 
 const accountNavigation = [
@@ -39,6 +43,8 @@ const accountNavigation = [
 ];
 
 function Sidebar({ isOpen, onClose }) {
+  const { isAdmin, isStaff, role } = useSession();
+
   const renderLink = (item) => (
     <NavLink
       key={item.to}
@@ -66,7 +72,7 @@ function Sidebar({ isOpen, onClose }) {
 
       <aside className={`sidebar ${isOpen ? "sidebar--open" : ""}`}>
         <div className="sidebar__top">
-          <Link className="brand" to="/dashboard" onClick={onClose}>
+          <Link className="brand" to={homeForRole(role)} onClick={onClose}>
             <img
               className="brand__logo"
               src={uajsLogo}
@@ -87,13 +93,14 @@ function Sidebar({ isOpen, onClose }) {
         <div className="sidebar__scroll">
           <div className="sidebar__label">MENÚ PRINCIPAL</div>
           <nav className="sidebar__nav" aria-label="Menú principal">
-            {navigation.map(renderLink)}
+            {navigation.map(item => renderLink(item.to === '/dashboard' ? { ...item, to:homeForRole(role), label:role === 'docente' ? 'Panel docente' : 'Mi Campus' } : item))}
           </nav>
 
-          {localStorage.getItem("smart-campus-role") === "administrador" && (
+          {isStaff && <><div className="sidebar__divider"/><div className="sidebar__label">GESTIÓN OPERATIVA</div><nav className="sidebar__nav" aria-label="Gestión operativa">{managementNavigation.map(renderLink)}</nav></>}
+          {isAdmin && (
             <>
               <div className="sidebar__divider" />
-              <div className="sidebar__label">ADMINISTRACIÓN</div>
+              <div className="sidebar__label">ADMINISTRACIÓN DEL SISTEMA</div>
               <nav className="sidebar__nav" aria-label="Administración">
                 {adminNavigation.map(renderLink)}
               </nav>
@@ -120,7 +127,7 @@ function Sidebar({ isOpen, onClose }) {
           </div>
 
           <div className="sidebar__footer">
-            <span>v2.0 · Centro de control</span>
+            <span>UAJS · {ROLE_LABELS[role]}</span>
           </div>
         </div>
       </aside>

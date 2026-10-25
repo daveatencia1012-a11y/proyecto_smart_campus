@@ -1,16 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/Icon/Icon";
 import RequestCard from "../components/RequestCard/RequestCard";
-import { getRequests, createRequest, deleteRequest } from "../services/requestsService";
+import { getMyRequests, createRequest, deleteRequest } from "../services/requestsService";
+import useSession from "../hooks/useSession";
+import useResource from '../hooks/useResource';
 
 const filters = ["TODAS", "REGISTRADA", "EN REVISION", "ASIGNADA", "EN PROCESO", "RESUELTA", "CERRADA"];
 const requestTypes = ["Solicitud de recurso", "Reserva de laboratorio", "Certificado", "Soporte académico", "Otro"];
 const dependencies = ["Bienestar Universitario", "Biblioteca", "Laboratorios", "Registro Académico", "Soporte TI"];
 const priorities = ["BAJA", "MEDIA", "ALTA"];
+const EMPTY = [];
 
 function Requests() {
-  const [requests, setRequests] = useState([]);
+  const { isAdmin } = useSession();
+  const resource = useResource(getMyRequests);
+  const requests = resource.data || EMPTY;
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("TODAS");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -20,25 +25,9 @@ function Requests() {
     prioridad: "MEDIA",
     descripcion: "",
   });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    loadRequests();
-  }, []);
-
-  async function loadRequests() {
-    try {
-      setLoading(true);
-      setError("");
-      const data = await getRequests();
-      setRequests(data);
-    } catch (err) {
-      setError(err.message || "Error al cargar las solicitudes.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [actionError, setError] = useState('');
+  const { loading, reload:loadRequests } = resource;
+  const error = actionError || resource.error;
 
   const filteredRequests = useMemo(() => {
     const normalizedSearch = search.toLowerCase().trim();
@@ -73,7 +62,7 @@ function Requests() {
   const handleDelete = async (id) => {
     try {
       await deleteRequest(id);
-      setRequests((current) => current.filter((r) => r.id !== id));
+      loadRequests();
     } catch (err) {
       setError(err.message || "Error al eliminar la solicitud.");
     }
@@ -174,7 +163,7 @@ function Requests() {
         ) : filteredRequests.length > 0 ? (
           <div className="requests-page__list">
             {filteredRequests.map((request) => (
-              <RequestCard key={request.id} request={request} onDelete={handleDelete} />
+              <RequestCard key={request.id} request={request} onDelete={isAdmin ? handleDelete : undefined} />
             ))}
           </div>
         ) : (

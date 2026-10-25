@@ -1,4 +1,4 @@
-import { get, post, put, del } from "./api";
+import { get, getAll, post, put, del } from "./api";
 
 function formatRequestDate(dateString) {
   if (!dateString) return "";
@@ -10,6 +10,8 @@ function formatRequestDate(dateString) {
 }
 
 function transformRequest(raw) {
+  let history = raw.historial || [];
+  if (typeof history === 'string') { try { history = JSON.parse(history); } catch { history = []; } }
   return {
     id: raw.id,
     type: raw.tipo_servicio || "Solicitud",
@@ -20,6 +22,7 @@ function transformRequest(raw) {
     date: formatRequestDate(raw.fecha_creacion),
     responsible: raw.responsable_id ? `Responsable #${raw.responsable_id}` : "Pendiente de asignación",
     usuario_id: raw.usuario_id,
+    history: Array.isArray(history) ? history : [],
   };
 }
 
@@ -28,7 +31,12 @@ export async function getRequests(filters = {}) {
   if (filters.estado) params.append("estado", filters.estado);
   if (filters.usuario_id) params.append("usuario_id", filters.usuario_id);
   const query = params.toString();
-  const data = await get(`/api/solicitudes${query ? `?${query}` : ""}`);
+  const data = await getAll(`/api/solicitudes${query ? `?${query}` : ""}`);
+  return Array.isArray(data) ? data.map(transformRequest) : [];
+}
+
+export async function getMyRequests() {
+  const data = await getAll("/api/solicitudes/mis");
   return Array.isArray(data) ? data.map(transformRequest) : [];
 }
 

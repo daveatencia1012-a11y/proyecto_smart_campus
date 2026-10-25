@@ -1,72 +1,35 @@
-import { useState } from "react";
-import useLocalStorage from "../hooks/useLocalStorage";
-
-const defaultProfile = {
-  name: "Ismael",
-  role: "Estudiante",
-  program: "Ingeniería de Sistemas",
-  dependency: "Facultad de Ciencias de la Computación",
-  email: "ismael.estudiante@uajs.edu.co",
-};
-
-function Profile() {
-  const [profile, setProfile] = useLocalStorage("uajs_profile", defaultProfile);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(profile);
-
-  const save = (event) => {
+import { useCallback, useState } from 'react';
+import useSession from '../hooks/useSession';
+import useResource from '../hooks/useResource';
+import { get, put } from '../services/api';
+import { updateSession } from '../services/session';
+import { ROLE_LABELS } from '../services/roles';
+export default function Profile() {
+  const { user } = useSession();
+  const load = useCallback(() => get(`/api/usuarios/${user.id}`), [user.id]);
+  const { data, loading, error, reload } = useResource(load);
+  const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+  async function save(event) {
     event.preventDefault();
-    setProfile(draft);
-    setEditing(false);
-  };
-
-  return (
-    <main className="profile-page">
-      <section className="profile-page__hero">
-        <div>
-          <span className="service-page__eyebrow">CUENTA</span>
-          <h1>Mi perfil</h1>
-          <p>Consulta y actualiza la información básica de tu perfil de prueba.</p>
-        </div>
-        <button className="service-page__hero-action" type="button" onClick={() => { setDraft(profile); setEditing((value) => !value); }}>
-          {editing ? "Cerrar edición" : "Editar perfil"}
-        </button>
-      </section>
-
-      <section className="profile-page__grid">
-        <article className="panel profile-card">
-          <div className="profile-card__avatar">{profile.name.charAt(0)}</div>
-          <h2>{profile.name}</h2>
-          <span className="profile-card__role">{profile.role}</span>
-          <div className="profile-card__line" />
-          <div className="profile-card__item"><span>Programa</span><strong>{profile.program}</strong></div>
-          <div className="profile-card__item"><span>Dependencia</span><strong>{profile.dependency}</strong></div>
-          <div className="profile-card__item"><span>Correo</span><strong>{profile.email}</strong></div>
-        </article>
-
-        <article className="panel profile-page__details">
-          <div className="panel__header"><div><span className="panel__eyebrow">INFORMACIÓN</span><h2>Datos del usuario</h2></div></div>
-          {editing ? (
-            <form className="profile-form" onSubmit={save}>
-              {Object.entries({ name: "Nombre", role: "Tipo de usuario", program: "Programa", dependency: "Dependencia", email: "Correo" }).map(([key, label]) => (
-                <label key={key}><span>{label}</span><input value={draft[key]} onChange={(e) => setDraft((current) => ({ ...current, [key]: e.target.value }))} /></label>
-              ))}
-              <button type="submit">Guardar cambios</button>
-            </form>
-          ) : (
-            <div className="profile-details__grid">
-              <div><span>Nombre completo</span><strong>{profile.name}</strong></div>
-              <div><span>Tipo de usuario</span><strong>{profile.role}</strong></div>
-              <div><span>Programa académico</span><strong>{profile.program}</strong></div>
-              <div><span>Dependencia</span><strong>{profile.dependency}</strong></div>
-              <div><span>Correo institucional</span><strong>{profile.email}</strong></div>
-              <div><span>Estado</span><strong className="profile-details__active">Activo</strong></div>
-            </div>
-          )}
-        </article>
-      </section>
-    </main>
-  );
+    const values = Object.fromEntries(new FormData(event.currentTarget));
+    if (!values.password) delete values.password;
+    setSaving(true); setMessage('');
+    try {
+      const result = await put(`/api/usuarios/${user.id}`, values);
+      updateSession({ usuario:result.usuario });
+      setMessage('Perfil actualizado.'); await reload();
+    } catch (err) { if (!err.cancelled) setMessage(err.message); }
+    finally { setSaving(false); }
+  }
+  const profile = data?.usuario;
+  return <section className="role-page"><h1>Mi perfil</h1><p>Tu rol es {ROLE_LABELS[profile?.rol || user.rol]}. Solo administración puede modificar roles y estados.</p>
+    {(error || message) && <p className="role-message" role="status">{error || message}</p>}
+    {loading ? <p>Cargando…</p> : profile && <form key={JSON.stringify(profile)} className="panel role-configuration" onSubmit={save}>
+      <label>Nombre<input name="nombre" defaultValue={profile.nombre} maxLength={100} required/></label>
+      <label>Correo<input name="email" type="email" defaultValue={profile.email} maxLength={100} required/></label>
+      <label>Nueva contraseña (opcional)<input name="password" type="password" minLength={8} autoComplete="new-password"/></label>
+      <button className="button button--primary" disabled={saving}>Guardar mi información</button>
+    </form>}
+  </section>;
 }
-
-export default Profile;
