@@ -12,6 +12,7 @@ export async function listRoles(req, res, next) {
 export async function listPermisos(req, res, next) {
   try {
     const { rol } = req.query;
+    if (rol !== undefined && !ROLES.includes(rol)) return res.status(400).json({ error: 'rol inválido' });
 
     if (rol) {
       const permisos = await Permiso.findByRole(rol);

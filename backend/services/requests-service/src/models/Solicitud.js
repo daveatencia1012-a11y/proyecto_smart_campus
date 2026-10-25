@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { fail } from '../validation.js';
 
 const VALID_TRANSITIONS = {
   'REGISTRADA': ['EN_REVISION'],
@@ -16,62 +17,71 @@ class SolicitudModel {
     if (filters.usuario_id) { query += ' AND usuario_id = ?'; params.push(filters.usuario_id); }
     if (filters.fecha_desde) { query += ' AND fecha_creacion >= ?'; params.push(filters.fecha_desde); }
     if (filters.fecha_hasta) { query += ' AND fecha_creacion <= ?'; params.push(filters.fecha_hasta); }
-    query += ' ORDER BY fecha_creacion DESC';
-    const [rows] = await pool.query(query, params);
-    return rows;
+    if (filters.fecha_hasta) {
+      // El límite superior anterior se sustituye por día completo.
+      query = query.replace('fecha_creacion <= ?', 'fecha_creacion < DATE_ADD(?, INTERVAL 1 DAY)');
+    }
+    query += ' ORDER BY fecha_creacion DESC, id DESC LIMIT ? OFFSET ?';
+    params.push(filters.limit ?? 100, filters.offset ?? 0);
+    const [rows] = await pool.execute(query, params);
+    return rows.map(row => ({ ...row, transiciones_permitidas: VALID_TRANSITIONS[row.estado] || [] }));
   }
 
   static async findById(id) {
-    const [rows] = await pool.query('SELECT * FROM solicitudes WHERE id = ?', [id]);
-    return rows[0];
+    const [rows] = await pool.execute('SELECT * FROM solicitudes WHERE id = ?', [id]);
+    return rows[0] && { ...rows[0], transiciones_permitidas: VALID_TRANSITIONS[rows[0].estado] || [] };
   }
 
   static async create(data) {
     const { usuario_id, tipo_servicio, dependencia, descripcion, prioridad } = data;
-    const [result] = await pool.query(
-      'INSERT INTO solicitudes (usuario_id, tipo_servicio, dependencia, descripcion, prioridad) VALUES (?, ?, ?, ?, ?)',
-      [usuario_id, tipo_servicio, dependencia, descripcion, prioridad]
+    const [result] = await pool.execute(
+      'INSERT INTO solicitudes (usuario_id, tipo_servicio, dependencia, descripcion, prioridad, historial) VALUES (?, ?, ?, ?, ?, ?)',
+      [usuario_id, tipo_servicio, dependencia, descripcion, prioridad, JSON.stringify([{ estado: 'REGISTRADA', actor_id: usuario_id, fecha: new Date().toISOString() }])]
     );
-    return { id: result.insertId, ...data };
+    return this.findById(result.insertId);
   }
 
   static async update(id, data) {
-    const { tipo_servicio, dependencia, descripcion, prioridad, responsable_id } = data;
-    const [result] = await pool.query(
-      'UPDATE solicitudes SET tipo_servicio = ?, dependencia = ?, descripcion = ?, prioridad = ?, responsable_id = ? WHERE id = ?',
-      [tipo_servicio, dependencia, descripcion, prioridad, responsable_id, id]
-    );
+    const allowed = ['tipo_servicio','dependencia','descripcion','prioridad','responsable_id'];
+    const keys = Object.keys(data).filter(key => allowed.includes(key) && data[key] !== undefined);
+    if (!keys.length) return Boolean(await this.findById(id));
+    const [result] = await pool.execute(`UPDATE solicitudes SET ${keys.map(key => `${key} = ?`).join(', ')} WHERE id = ?`, [...keys.map(key => data[key]), id]);
     return result.affectedRows > 0;
   }
 
-  static async updateEstado(id, nuevoEstado) {
-    const solicitud = await this.findById(id);
-    if (!solicitud) return false;
-    const currentEstado = solicitud.estado;
-    if (!VALID_TRANSITIONS[currentEstado]?.includes(nuevoEstado)) {
-      throw new Error(`Transición de estado no válida: ${currentEstado} -> ${nuevoEstado}`);
-    }
-    const [result] = await pool.query(
-      'UPDATE solicitudes SET estado = ? WHERE id = ?',
-      [nuevoEstado, id]
-    );
-    return result.affectedRows > 0;
+  static async updateEstado(id, nuevoEstado, actorId) {
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      const [[solicitud]] = await conn.execute('SELECT * FROM solicitudes WHERE id = ? FOR UPDATE', [id]);
+      if (!solicitud) { await conn.rollback(); return false; }
+      if (!VALID_TRANSITIONS[solicitud.estado]?.includes(nuevoEstado)) fail('Transición de estado no válida', 409);
+      const entry = JSON.stringify({ estado: nuevoEstado, anterior: solicitud.estado, actor_id: actorId, fecha: new Date().toISOString() });
+      await conn.execute("UPDATE solicitudes SET estado = ?, historial = JSON_ARRAY_APPEND(COALESCE(historial, JSON_ARRAY()), '$', CAST(? AS JSON)) WHERE id = ?", [nuevoEstado, entry, id]);
+      await conn.commit();
+      return true;
+    } catch (error) { await conn.rollback(); throw error; }
+    finally { conn.release(); }
   }
 
   static async delete(id) {
-    const [result] = await pool.query('DELETE FROM solicitudes WHERE id = ?', [id]);
+    const [result] = await pool.execute('DELETE FROM solicitudes WHERE id = ?', [id]);
     return result.affectedRows > 0;
   }
 
-  static async count(estado) {
-    let query = 'SELECT COUNT(*) AS total FROM solicitudes WHERE 1=1';
+  static async count(estado, filters = {}, grouped = false) {
+    let query = `SELECT ${grouped ? 'estado, ' : ''}COUNT(*) AS total FROM solicitudes WHERE 1=1`;
     const params = [];
     if (estado) {
       query += ' AND estado = ?';
       params.push(estado);
     }
-    const [rows] = await pool.query(query, params);
-    return rows[0].total;
+    if (filters.usuario_id) { query += ' AND usuario_id = ?'; params.push(filters.usuario_id); }
+    if (filters.fecha_desde) { query += ' AND fecha_creacion >= ?'; params.push(filters.fecha_desde); }
+    if (filters.fecha_hasta) { query += ' AND fecha_creacion < DATE_ADD(?, INTERVAL 1 DAY)'; params.push(filters.fecha_hasta); }
+    if (grouped) query += ' GROUP BY estado';
+    const [rows] = await pool.execute(query, params);
+    return grouped ? Object.fromEntries(rows.map(row => [row.estado, row.total])) : rows[0].total;
   }
 
   static getValidTransitions() {

@@ -1,21 +1,21 @@
 import pool from '../config/db.js';
 
 export const ReservaModel = {
-  async create({ usuario_id, recurso_id, fecha, hora_inicio, hora_fin }) {
-    const [result] = await pool.query(
+  async create({ usuario_id, recurso_id, fecha, hora_inicio, hora_fin }, conn = pool) {
+    const [result] = await conn.execute(
       `INSERT INTO reservas (usuario_id, recurso_id, fecha, hora_inicio, hora_fin, estado)
-       VALUES (?, ?, ?, ?, ?, 'pendiente')`,
+       VALUES (?, ?, ?, ?, ?, 'confirmada')`,
       [usuario_id, recurso_id, fecha, hora_inicio, hora_fin]
     );
-    return { id: result.insertId, usuario_id, recurso_id, fecha, hora_inicio, hora_fin, estado: 'pendiente' };
+    return { id: result.insertId, usuario_id, recurso_id, fecha, hora_inicio, hora_fin, estado: 'confirmada' };
   },
 
-  async findById(id) {
-    const [rows] = await pool.query('SELECT * FROM reservas WHERE id = ?', [id]);
+  async findById(id, conn = pool, lock = false) {
+    const [rows] = await conn.execute(`SELECT * FROM reservas WHERE id = ?${lock ? ' FOR UPDATE' : ''}`, [id]);
     return rows[0];
   },
 
-  async findByFilters({ usuario_id, recurso_id, fecha, estado, limit = 50, offset = 0 }) {
+  async findByFilters({ usuario_id, recurso_id, fecha, estado, fecha_desde, fecha_hasta, limit = 100, offset = 0 }) {
     const conditions = [];
     const params = [];
 
@@ -35,19 +35,21 @@ export const ReservaModel = {
       conditions.push('estado = ?');
       params.push(estado);
     }
+    if (fecha_desde) { conditions.push('fecha >= ?'); params.push(fecha_desde); }
+    if (fecha_hasta) { conditions.push('fecha <= ?'); params.push(fecha_hasta); }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const [rows] = await pool.query(
-      `SELECT * FROM reservas ${whereClause} ORDER BY creado_en DESC LIMIT ? OFFSET ?`,
+    const [rows] = await pool.execute(
+      `SELECT * FROM reservas ${whereClause} ORDER BY creado_en DESC, id DESC LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
 
     return rows;
   },
 
-  async update(id, { fecha, hora_inicio, hora_fin }) {
-    const [result] = await pool.query(
+  async update(id, { fecha, hora_inicio, hora_fin }, conn = pool) {
+    const [result] = await conn.execute(
       `UPDATE reservas SET fecha = COALESCE(?, fecha), hora_inicio = COALESCE(?, hora_inicio), hora_fin = COALESCE(?, hora_fin)
        WHERE id = ?`,
       [fecha, hora_inicio, hora_fin, id]
@@ -55,8 +57,8 @@ export const ReservaModel = {
     return result.affectedRows > 0;
   },
 
-  async cancel(id, motivo_cancelacion) {
-    const [result] = await pool.query(
+  async cancel(id, motivo_cancelacion, conn = pool) {
+    const [result] = await conn.execute(
       `UPDATE reservas SET estado = 'cancelada', motivo_cancelacion = ? WHERE id = ?`,
       [motivo_cancelacion, id]
     );
@@ -72,18 +74,33 @@ export const ReservaModel = {
       params.push(excludeId);
     }
 
-    const [rows] = await pool.query(query, params);
+    const [rows] = await pool.execute(query, params);
     return rows.length > 0;
   },
 
-  async count(fecha) {
-    let query = 'SELECT COUNT(*) AS total FROM reservas WHERE 1=1';
+  async count(fecha, filters = {}, grouped = false) {
+    let query = `SELECT ${grouped ? 'estado, ' : ''}COUNT(*) AS total FROM reservas WHERE 1=1`;
     const params = [];
     if (fecha) {
       query += ' AND fecha = ?';
       params.push(fecha);
     }
-    const [rows] = await pool.query(query, params);
-    return rows[0].total;
+    if (filters.usuario_id) { query += ' AND usuario_id = ?'; params.push(filters.usuario_id); }
+    if (filters.estado) { query += ' AND estado = ?'; params.push(filters.estado); }
+    if (filters.fecha_desde) { query += ' AND fecha >= ?'; params.push(filters.fecha_desde); }
+    if (filters.fecha_hasta) { query += ' AND fecha <= ?'; params.push(filters.fecha_hasta); }
+    if (grouped) query += ' GROUP BY estado';
+    const [rows] = await pool.execute(query, params);
+    return grouped ? Object.fromEntries(rows.map(row => [row.estado, row.total])) : rows[0].total;
+  },
+  async byDate(filters = {}) {
+    let query = 'SELECT fecha, COUNT(*) AS total FROM reservas WHERE 1=1';
+    const params = [];
+    if (filters.fecha_desde) { query += ' AND fecha >= ?'; params.push(filters.fecha_desde); }
+    if (filters.fecha_hasta) { query += ' AND fecha <= ?'; params.push(filters.fecha_hasta); }
+    if (filters.estado) { query += ' AND estado = ?'; params.push(filters.estado); }
+    query += ' GROUP BY fecha ORDER BY fecha';
+    const [rows] = await pool.execute(query, params);
+    return { por_fecha: Object.fromEntries(rows.map(row => [row.fecha, row.total])), total: rows.reduce((sum, row) => sum + row.total, 0) };
   }
 };

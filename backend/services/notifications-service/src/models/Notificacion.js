@@ -13,14 +13,14 @@ const Notificacion = {
     return result.insertId;
   },
 
-  async listarPorUsuario(usuario_id) {
+  async listarPorUsuario(usuario_id, limit = 100, offset = 0) {
     const [rows] = await db.query(
       `SELECT id, usuario_id, titulo, mensaje, tipo, referencia_id,
               referencia_tipo, leida, fecha_creacion
        FROM notificaciones
        WHERE usuario_id = ?
-       ORDER BY fecha_creacion DESC`,
-      [usuario_id]
+        ORDER BY fecha_creacion DESC, id DESC LIMIT ? OFFSET ?`,
+      [usuario_id, limit, offset]
     );
     return rows;
   },

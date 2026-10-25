@@ -4,11 +4,12 @@ import { eventoController } from '../controllers/eventoController.js';
 
 const router = Router();
 
-router.post('/', authenticate, authorize('administrador', 'docente', 'administrativo'), eventoController.createEvento);
+router.post('/', authenticate, authorize('administrador', 'docente'), eventoController.createEvento);
 router.get('/', authenticate, eventoController.getEventos);
 router.get('/proximos', authenticate, eventoController.getProximosEventos);
+router.get('/conteo', authenticate, eventoController.countEventos);
 router.get('/:id', authenticate, eventoController.getEventoById);
-router.put('/:id', authenticate, authorize('administrador', 'docente', 'administrativo'), eventoController.updateEvento);
+router.put('/:id', authenticate, authorize('administrador', 'docente'), eventoController.updateEvento);
 router.delete('/:id', authenticate, authorize('administrador'), eventoController.deleteEvento);
 
 export default router;

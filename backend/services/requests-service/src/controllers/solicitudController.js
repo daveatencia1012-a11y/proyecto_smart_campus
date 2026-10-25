@@ -1,6 +1,7 @@
 import SolicitudModel from '../models/Solicitud.js';
-import axios from 'axios';
+import axios from '../config/http.js';
 import dotenv from 'dotenv';
+import { solicitudInput, filters as parseFilters, id, text } from '../validation.js';
 
 dotenv.config();
 
@@ -24,7 +25,7 @@ async function notifyStatusChange(solicitud) {
 export const createSolicitud = async (req, res, next) => {
   try {
     const usuario_id = req.user.id;
-    const data = { ...req.body, usuario_id };
+    const data = { ...solicitudInput(req.body), usuario_id };
     const solicitud = await SolicitudModel.create(data);
     res.status(201).json(solicitud);
   } catch (error) {
@@ -34,12 +35,7 @@ export const createSolicitud = async (req, res, next) => {
 
 export const getSolicitudes = async (req, res, next) => {
   try {
-    const filters = {};
-    const { estado, usuario_id, fecha_desde, fecha_hasta } = req.query;
-    if (estado) filters.estado = estado;
-    if (usuario_id) filters.usuario_id = usuario_id;
-    if (fecha_desde) filters.fecha_desde = fecha_desde;
-    if (fecha_hasta) filters.fecha_hasta = fecha_hasta;
+    const filters = parseFilters(req.query);
     const solicitudes = await SolicitudModel.findAll(filters);
     res.json(solicitudes);
   } catch (error) {
@@ -49,7 +45,7 @@ export const getSolicitudes = async (req, res, next) => {
 
 export const getSolicitudById = async (req, res, next) => {
   try {
-    const solicitud = await SolicitudModel.findById(req.params.id);
+    const solicitud = await SolicitudModel.findById(id(req.params.id));
     if (!solicitud) return res.status(404).json({ error: 'Solicitud no encontrada' });
     const isOwner = solicitud.usuario_id === req.user.id;
     const isStaff = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
@@ -62,7 +58,7 @@ export const getSolicitudById = async (req, res, next) => {
 
 export const getMisSolicitudes = async (req, res, next) => {
   try {
-    const solicitudes = await SolicitudModel.findAll({ usuario_id: req.user.id });
+    const solicitudes = await SolicitudModel.findAll({ ...parseFilters(req.query), usuario_id: req.user.id });
     res.json(solicitudes);
   } catch (error) {
     next(error);
@@ -71,9 +67,9 @@ export const getMisSolicitudes = async (req, res, next) => {
 
 export const countSolicitudes = async (req, res, next) => {
   try {
-    const { estado } = req.query;
-    const count = await SolicitudModel.count(estado);
-    res.json({ count });
+    const filters = parseFilters(req.query);
+    const [count, por_estado] = await Promise.all([SolicitudModel.count(filters.estado, filters), SolicitudModel.count(filters.estado, filters, true)]);
+    res.json({ count, por_estado });
   } catch (error) {
     next(error);
   }
@@ -81,8 +77,16 @@ export const countSolicitudes = async (req, res, next) => {
 
 export const updateSolicitud = async (req, res, next) => {
   try {
-    const { tipo_servicio, dependencia, descripcion, prioridad, responsable_id } = req.body;
-    const updated = await SolicitudModel.update(req.params.id, { tipo_servicio, dependencia, descripcion, prioridad, responsable_id });
+    const fields = solicitudInput(req.body, true);
+    if (fields.responsable_id) {
+      try {
+        await axios.get(`${process.env.USERS_SERVICE_URL || 'http://users-service:3201'}/api/usuarios/responsables/${fields.responsable_id}`, { headers: { Authorization: req.headers.authorization } });
+      } catch (error) {
+        if (error.status === 404) return res.status(400).json({ error: 'Responsable no válido o inactivo' });
+        throw error;
+      }
+    }
+    const updated = await SolicitudModel.update(id(req.params.id), fields);
     if (!updated) return res.status(404).json({ error: 'Solicitud no encontrada' });
     const solicitud = await SolicitudModel.findById(req.params.id);
     res.json(solicitud);
@@ -93,8 +97,8 @@ export const updateSolicitud = async (req, res, next) => {
 
 export const updateSolicitudEstado = async (req, res, next) => {
   try {
-    const { estado } = req.body;
-    const updated = await SolicitudModel.updateEstado(req.params.id, estado);
+    const estado = text(req.body?.estado, 'estado', 30);
+    const updated = await SolicitudModel.updateEstado(id(req.params.id), estado, req.user.id);
     if (!updated) return res.status(404).json({ error: 'Solicitud no encontrada o transición no válida' });
     const solicitud = await SolicitudModel.findById(req.params.id);
     await notifyStatusChange(solicitud);
@@ -106,10 +110,17 @@ export const updateSolicitudEstado = async (req, res, next) => {
 
 export const deleteSolicitud = async (req, res, next) => {
   try {
-    const deleted = await SolicitudModel.delete(req.params.id);
+    const deleted = await SolicitudModel.delete(id(req.params.id));
     if (!deleted) return res.status(404).json({ error: 'Solicitud no encontrada' });
     res.status(204).send();
   } catch (error) {
     next(error);
   }
+};
+
+export const countMisSolicitudes = async (req, res, next) => {
+  try {
+    const filters = { ...parseFilters(req.query), usuario_id: req.user.id };
+    res.json({ count: await SolicitudModel.count(filters.estado, filters) });
+  } catch (error) { next(error); }
 };

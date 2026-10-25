@@ -1,5 +1,6 @@
-import axios from 'axios';
+import axios from '../config/http.js';
 import { EventoModel } from '../models/Evento.js';
+import { eventInput, eventFilters } from '../validation.js';
 
 const NOTIFICATIONS_SERVICE_URL = process.env.NOTIFICATIONS_SERVICE_URL || 'http://notifications-service:3206';
 
@@ -9,7 +10,7 @@ export const eventoController = {
   async createEvento(req, res, next) {
     try {
       const creado_por = req.user.id;
-      const { nombre, descripcion, fecha, hora, lugar, tipo, publico } = req.body;
+      const { nombre, descripcion, fecha, hora, lugar, tipo, publico } = eventInput(req.body);
 
       if (!nombre || !fecha || !hora || !lugar || !tipo) {
         return res.status(400).json({ error: 'Faltan campos requeridos' });
@@ -17,6 +18,10 @@ export const eventoController = {
 
       if (!TIPOS_VALIDOS.includes(tipo)) {
         return res.status(400).json({ error: 'Tipo de evento inválido' });
+      }
+
+      if (publico !== undefined && ![0, 1, true, false].includes(publico)) {
+        return res.status(400).json({ error: 'publico debe ser 0 o 1' });
       }
 
       const evento = await EventoModel.create({
@@ -51,13 +56,9 @@ export const eventoController = {
 
   async getEventos(req, res, next) {
     try {
-      const { fecha, tipo } = req.query;
-      const filters = {};
+      const filters = eventFilters(req.query, req.user);
 
-      if (fecha) filters.fecha = fecha;
-      if (tipo) filters.tipo = tipo;
-
-      const eventos = await EventoModel.findAll(filters);
+      const eventos = await EventoModel.findAll(filters, req.user);
       return res.json(eventos);
     } catch (error) {
       next(error);
@@ -73,6 +74,11 @@ export const eventoController = {
         return res.status(404).json({ error: 'Evento no encontrado' });
       }
 
+      const esGestor = req.user.rol === 'administrador';
+      if (!evento.publico && !esGestor && evento.creado_por !== req.user.id) {
+        return res.status(403).json({ error: 'No autorizado' });
+      }
+
       return res.json(evento);
     } catch (error) {
       next(error);
@@ -82,14 +88,15 @@ export const eventoController = {
   async updateEvento(req, res, next) {
     try {
       const { id } = req.params;
-      const { nombre, descripcion, fecha, hora, lugar, tipo, publico } = req.body;
+      const fields = eventInput(req.body, true);
+      const { nombre, descripcion, fecha, hora, lugar, tipo, publico } = fields;
 
       const evento = await EventoModel.findById(id);
       if (!evento) {
         return res.status(404).json({ error: 'Evento no encontrado' });
       }
 
-      const esGestor = req.user.rol === 'administrador' || req.user.rol === 'administrativo';
+      const esGestor = req.user.rol === 'administrador';
       const isCreator = evento.creado_por === req.user.id;
 
       if (!esGestor && !isCreator) {
@@ -121,15 +128,7 @@ export const eventoController = {
         return res.status(400).json({ error: 'publico debe ser 0 o 1' });
       }
 
-      const actualizado = await EventoModel.update(id, {
-        nombre: nombre !== undefined ? nombre : evento.nombre,
-        descripcion: descripcion !== undefined ? descripcion : evento.descripcion,
-        fecha: fecha !== undefined ? fecha : evento.fecha,
-        hora: hora !== undefined ? hora : evento.hora,
-        lugar: lugar !== undefined ? lugar : evento.lugar,
-        tipo: tipo !== undefined ? tipo : evento.tipo,
-        publico: publico !== undefined ? publico : evento.publico
-      });
+      const actualizado = await EventoModel.update(id, fields);
 
       if (!actualizado) {
         return res.status(404).json({ error: 'Evento no encontrado' });
@@ -164,11 +163,22 @@ export const eventoController = {
 
   async getProximosEventos(req, res, next) {
     try {
-      const dias = parseInt(req.query.dias) || 30;
-      const eventos = await EventoModel.findUpcoming(dias);
+      const dias = req.query.dias === undefined ? 30 : Number(req.query.dias);
+      if (!Number.isInteger(dias) || dias < 1 || dias > 365) {
+        return res.status(400).json({ error: 'dias debe estar entre 1 y 365' });
+      }
+      const eventos = await EventoModel.findUpcoming(dias, req.user);
       return res.json(eventos);
     } catch (error) {
       next(error);
     }
+  },
+  async countEventos(req, res, next) {
+    try {
+      const filters = eventFilters(req.query, req.user);
+      const dias = req.query.dias === undefined ? undefined : Number(req.query.dias);
+      if (dias !== undefined && (!Number.isInteger(dias) || dias < 1 || dias > 365)) return res.status(400).json({ error: 'dias inválido' });
+      res.json({ count: await EventoModel.count(filters, req.user, dias) });
+    } catch (error) { next(error); }
   }
 };

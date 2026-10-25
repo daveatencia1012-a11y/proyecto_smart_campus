@@ -2,15 +2,20 @@ import pool from '../config/db.js';
 
 export const DisponibilidadModel = {
   async findByRecursoIdAndFecha(recurso_id, fecha) {
-    const [rows] = await pool.query(
-      'SELECT * FROM disponibilidad WHERE recurso_id = ? AND fecha = ? ORDER BY hora_inicio ASC',
-      [recurso_id, fecha]
+    const [rows] = await pool.execute(
+      `SELECT id, recurso_id, fecha, hora_inicio, hora_fin, tipo, 'disponibilidad' AS fuente
+       FROM disponibilidad WHERE recurso_id = ? AND fecha = ?
+       UNION ALL
+       SELECT id, recurso_id, fecha, hora_inicio, hora_fin, 'reserva' AS tipo, 'reservas' AS fuente
+       FROM reservas WHERE recurso_id = ? AND fecha = ? AND estado <> 'cancelada'
+       ORDER BY hora_inicio`,
+      [recurso_id, fecha, recurso_id, fecha]
     );
     return rows;
   },
 
-  async create({ recurso_id, fecha, hora_inicio, hora_fin, tipo }) {
-    const [result] = await pool.query(
+  async create({ recurso_id, fecha, hora_inicio, hora_fin, tipo }, conn = pool) {
+    const [result] = await conn.execute(
       `INSERT INTO disponibilidad (recurso_id, fecha, hora_inicio, hora_fin, tipo)
        VALUES (?, ?, ?, ?, ?)`,
       [recurso_id, fecha, hora_inicio, hora_fin, tipo]
@@ -32,7 +37,7 @@ export const DisponibilidadModel = {
       params.push(excludeId);
     }
 
-    const [rows] = await pool.query(query, params);
+    const [rows] = await pool.execute(query, params);
     return rows.length > 0;
   }
 };
