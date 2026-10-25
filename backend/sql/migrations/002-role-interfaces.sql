@@ -1,3 +1,6 @@
+-- Conexión en UTF-8 completo: sin esto el cliente de MySQL guarda las tildes dañadas (DEF-01).
+SET NAMES utf8mb4;
+
 -- Migración aditiva y reejecutable. No confirma reservas antiguas ni borra datos.
 USE users_db;
 CREATE TABLE IF NOT EXISTS configuracion (

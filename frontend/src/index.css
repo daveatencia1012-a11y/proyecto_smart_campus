@@ -8581,6 +8581,18 @@ a .ui-icon {
   padding-top:18px;
   border-top:1px solid var(--border);
 }
+/* Botones desactivados: antes solo el modal de admin tenía este estilo y se veían activos. */
+.button:disabled,
+.button:disabled:hover{
+  opacity:.45;
+  cursor:not-allowed;
+  box-shadow:none;
+  transform:none;
+}
+.request-detail__hint{
+  color:var(--text-muted);
+  font-size:12px;
+}
 .request-detail__assign{
   display:flex;
   flex-wrap:wrap;

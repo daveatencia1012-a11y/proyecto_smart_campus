@@ -33,6 +33,7 @@ docker compose up -d --wait mysql
 docker compose exec -T mysql bash /docker-entrypoint-initdb.d/zz-app-users.sh
 docker compose exec -T mysql bash -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql --protocol=socket --user=root < /migrations/001-calendar.sql'
 docker compose exec -T mysql bash -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql --protocol=socket --user=root < /migrations/002-role-interfaces.sql'
+docker compose exec -T mysql bash -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql --protocol=socket --user=root < /migrations/003-actualizado-en.sql'
 ```
 
 El primer script crea/reconfigura seis cuentas reservadas `campus_*` con CRUD
@@ -49,7 +50,12 @@ reservas antiguas manualmente antes de operar con normalidad. Las entradas
 legadas `disponibilidad.tipo='reserva'` se conservan y siguen bloqueando; la API
 ya no permite crear entradas nuevas de ese tipo.
 
-Ambas migraciones se ejecutan con el usuario root únicamente desde la consola
+La migración 003 también es aditiva y reejecutable: agrega `actualizado_en`
+(fecha de la última modificación) a `users`, `pqrs`, `reservas`, `recursos` y
+`eventos`, y la restricción `CHECK (hora_fin > hora_inicio)` a `reservas` y
+`disponibilidad`. `solicitudes` ya registraba esa fecha en `fecha_actualizacion`.
+
+Las migraciones se ejecutan con el usuario root únicamente desde la consola
 del contenedor; las cuentas `campus_*` no reciben DDL.
 
 El usuario inicial `admin@uniajs.edu.co` conserva una contraseña de
@@ -61,8 +67,8 @@ cuenta para la operación diaria.
 
 El entrypoint oficial de MySQL ejecuta `init.sql`, después la migración 002 y
 por último `zz-app-users.sh`. No se necesita aplicar nada a mano en un volumen
-nuevo. En un volumen existente sí deben ejecutarse las migraciones 001 y 002,
-en ese orden, con los comandos del apartado anterior.
+nuevo. En un volumen existente sí deben ejecutarse las migraciones 001, 002 y
+003, en ese orden, con los comandos del apartado anterior.
 
 ## 4. Desplegar y verificar
 

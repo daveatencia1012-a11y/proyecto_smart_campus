@@ -56,6 +56,9 @@ class SolicitudModel {
       const [[solicitud]] = await conn.execute('SELECT * FROM solicitudes WHERE id = ? FOR UPDATE', [id]);
       if (!solicitud) { await conn.rollback(); return false; }
       if (!VALID_TRANSITIONS[solicitud.estado]?.includes(nuevoEstado)) fail('Transición de estado no válida', 409);
+      // Regla del equipo (más estricta que la guía §7.4, que solo lo exige para ASIGNADA):
+      // sin responsable la solicitud no avanza; solo puede quedarse o volver a REGISTRADA.
+      if (nuevoEstado !== 'REGISTRADA' && !solicitud.responsable_id) fail('Asigna un responsable antes de avanzar la solicitud', 409);
       const entry = JSON.stringify({ estado: nuevoEstado, anterior: solicitud.estado, actor_id: actorId, fecha: new Date().toISOString() });
       await conn.execute("UPDATE solicitudes SET estado = ?, historial = JSON_ARRAY_APPEND(COALESCE(historial, JSON_ARRAY()), '$', CAST(? AS JSON)) WHERE id = ?", [nuevoEstado, entry, id]);
       await conn.commit();

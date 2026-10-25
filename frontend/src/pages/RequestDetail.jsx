@@ -118,7 +118,7 @@ function RequestDetail() {
         </span>
       </section>
 
-      {message && <p className="role-message" role="status">{message}</p>}
+      {message && !staff && <p className="role-message" role="status">{message}</p>}
 
       <section className="request-detail__grid">
         <article className="request-detail__card panel">
@@ -182,12 +182,15 @@ function RequestDetail() {
                 <div className="role-actions">
                   {request.transitions.map((state) => {
                     const forward = LIFECYCLE.indexOf(state) > currentIndex;
+                    // El backend no deja avanzar sin responsable (SD2-04); aquí se avisa antes de intentarlo.
+                    const needsResponsible = state !== "REGISTRADA" && !request.responsibleId;
                     return (
                       <button
                         key={state}
                         type="button"
                         className={`button ${forward ? "button--primary" : "button--secondary"}`}
-                        disabled={saving}
+                        disabled={saving || needsResponsible}
+                        title={needsResponsible ? "Asigna y guarda un responsable primero" : undefined}
                         onClick={() => run(() => updateRequestStatus(request.id, state), `Estado cambiado a ${label(state)}.`)}
                       >
                         {forward ? `Pasar a ${label(state)}` : `Devolver a ${label(state)}`}
@@ -198,6 +201,10 @@ function RequestDetail() {
               ) : (
                 <p>La solicitud está cerrada; no admite más cambios de estado.</p>
               )}
+              {request.transitions.some((state) => state !== "REGISTRADA") && !request.responsibleId && (
+                <p className="request-detail__hint">Para avanzar la solicitud, primero elige un responsable y pulsa "Guardar responsable".</p>
+              )}
+              {message && <p className="role-message" role="status">{message}</p>}
             </div>
           )}
         </article>

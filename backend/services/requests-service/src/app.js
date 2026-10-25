@@ -18,6 +18,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'requests-service' });
 });
 
+// Rutas inexistentes: respuesta JSON consistente en lugar del HTML por defecto de Express.
+app.use((req, res) => {
+  res.status(404).json({ error: 'Ruta no encontrada' });
+});
+
 app.use((err, req, res, next) => {
   const status = err.status || err.statusCode || 500;
   if (status >= 500) console.error(`[requests-service] ${err.code || err.name || 'ERROR'}`);
