@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   rol ENUM('estudiante', 'docente', 'administrativo', 'administrador') NOT NULL,
   activo TINYINT(1) DEFAULT 1,
-  creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+  creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS permisos (
@@ -55,7 +56,8 @@ CREATE TABLE IF NOT EXISTS pqrs (
   descripcion TEXT NOT NULL,
   estado ENUM('registrada', 'en_revision', 'respondida', 'cerrada') DEFAULT 'registrada',
   respuesta TEXT NULL,
-  creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+  creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 USE reservations_db;
@@ -70,7 +72,9 @@ CREATE TABLE IF NOT EXISTS reservas (
   estado ENUM('confirmada', 'cancelada', 'pendiente') DEFAULT 'confirmada',
   motivo_cancelacion TEXT NULL,
   creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_reservas_calendario (recurso_id, fecha, estado, hora_inicio, hora_fin)
+  actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_reservas_calendario (recurso_id, fecha, estado, hora_inicio, hora_fin),
+  CONSTRAINT chk_reservas_horario CHECK (hora_fin > hora_inicio)
 );
 
 CREATE TABLE IF NOT EXISTS disponibilidad (
@@ -80,7 +84,8 @@ CREATE TABLE IF NOT EXISTS disponibilidad (
   hora_inicio TIME NOT NULL,
   hora_fin TIME NOT NULL,
   tipo ENUM('reserva', 'mantenimiento', 'bloqueo') NOT NULL,
-  INDEX idx_disponibilidad_calendario (recurso_id, fecha, hora_inicio, hora_fin)
+  INDEX idx_disponibilidad_calendario (recurso_id, fecha, hora_inicio, hora_fin),
+  CONSTRAINT chk_disponibilidad_horario CHECK (hora_fin > hora_inicio)
 );
 
 -- Se conserva el ENUM legado 'reserva' para no perder datos existentes.
@@ -102,7 +107,8 @@ CREATE TABLE IF NOT EXISTS recursos (
   estado ENUM('disponible', 'en_mantenimiento', 'fuera_servicio') NOT NULL,
   disponible TINYINT(1) DEFAULT 1,
   descripcion TEXT NULL,
-  creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+  creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 USE events_db;
@@ -117,7 +123,8 @@ CREATE TABLE IF NOT EXISTS eventos (
   tipo ENUM('academico', 'institucional', 'cultural', 'deportivo', 'otro') NOT NULL,
   creado_por INT NOT NULL,
   publico TINYINT(1) DEFAULT 1,
-  creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+  creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 USE notifications_db;
