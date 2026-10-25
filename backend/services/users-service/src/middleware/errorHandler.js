@@ -1,11 +1,9 @@
 export function errorHandler(err, req, res, next) {
-  console.error(`[${new Date().toISOString()}] Error en ${req.method} ${req.originalUrl}:`, err);
-
-  const status = err.status || 500;
+  const status = err.code === 'ER_DUP_ENTRY' ? 409 : err.status || err.statusCode || 500;
+  if (status >= 500) console.error(`[users-service] ${req.method}: ${err.code || err.name || 'ERROR'}`);
 
   res.status(status).json({
-    error: err.message || 'Error interno del servidor',
-    ...(process.env.NODE_ENV === 'development' ? { stack: err.stack } : {})
+    error: err.code === 'ER_DUP_ENTRY' ? 'El registro ya existe' : status >= 500 ? 'Error interno del servidor' : err.message
   });
 }
 

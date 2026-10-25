@@ -18,10 +18,10 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error(`[${new Date().toISOString()}] Error:`, err.message);
-  const status = err.status || 500;
+  const status = err.status || err.statusCode || 500;
+  if (status >= 500) console.error(`[notifications-service] ${err.code || err.name || 'ERROR'}`);
   res.status(status).json({
-    error: err.message || "Error interno del servidor"
+    error: status >= 500 ? "Error interno del servidor" : err.message
   });
 });
 

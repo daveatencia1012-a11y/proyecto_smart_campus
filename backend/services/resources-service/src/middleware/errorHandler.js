@@ -1,11 +1,9 @@
 export default (err, req, res, next) => {
-  console.error(err.stack);
-
-  const status = err.statusCode || 500;
-  const message = err.message || 'Error interno del servidor';
+  const status = err.code === 'ER_DUP_ENTRY' ? 409 : err.statusCode || err.status || 500;
+  if (status >= 500) console.error(`[resources-service] ${err.code || err.name || 'ERROR'}`);
+  const message = err.code === 'ER_DUP_ENTRY' ? 'El código ya existe' : status >= 500 ? 'Error interno del servidor' : err.message;
 
   res.status(status).json({
-    message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    error: message, message
   });
 };
