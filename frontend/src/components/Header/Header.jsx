@@ -11,6 +11,11 @@ import useResource from '../../hooks/useResource';
 import { get } from '../../services/api';
 
 const loadUnread = () => get('/api/notificaciones/no-leidas');
+// Preferencias de Configuración (pages/Settings.jsx), guardadas por usuario en este navegador.
+const readUiPreferences = (id) => {
+  try { return { unreadBadge: true, autoRefresh: true, ...JSON.parse(localStorage.getItem(`uajs-ui-${id}`) || '{}') }; }
+  catch { return { unreadBadge: true, autoRefresh: true }; }
+};
 
 function Header({ onMenuClick }) {
   const navigate = useNavigate();
@@ -38,6 +43,17 @@ function Header({ onMenuClick }) {
   };
 
   const { user, role, isAdmin } = useSession();
+  const [uiPrefs, setUiPrefs] = useState(() => readUiPreferences(user?.id));
+  useEffect(() => {
+    const sync = () => setUiPrefs(readUiPreferences(user?.id));
+    window.addEventListener('campus-preferences-changed', sync);
+    return () => window.removeEventListener('campus-preferences-changed', sync);
+  }, [user?.id]);
+  useEffect(() => {
+    if (!uiPrefs.autoRefresh) return undefined;
+    const timer = window.setInterval(reloadUnread, 60000);
+    return () => window.clearInterval(timer);
+  }, [uiPrefs.autoRefresh, reloadUnread]);
   const storedUser = user?.nombre || "Usuario";
   const displayName = storedUser.includes("@") ? storedUser.split("@")[0] : storedUser;
   const initials = displayName.split(/[ ._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join("") || "IS";
@@ -74,7 +90,7 @@ function Header({ onMenuClick }) {
           aria-label="Ver notificaciones"
         >
           <Icon name="notifications" size={20} />
-          {unread?.no_leidas > 0 && <span className="header__notification-dot" />}
+          {uiPrefs.unreadBadge && unread?.no_leidas > 0 && <span className="header__notification-dot" />}
         </Link>
 
         <div className="header__profile-wrap" ref={profileRef}>
