@@ -105,6 +105,9 @@ describe('cuatro roles: HTTP real, gateway, seis servicios y MySQL', { skip:proc
     assert.equal((await call('PUT',`/api/solicitudes/${request.id}/estado`,'docente',{ estado:'EN_REVISION' })).status,403);
     const updated = await call('PUT',`/api/solicitudes/${request.id}`,'administrativo',{ descripcion:'Descripción actualizada' });
     assert.equal(updated.status,200); assert.equal(updated.data.prioridad,'media'); assert.equal(updated.data.dependencia,'Biblioteca');
+    const unassigned = await call('PUT',`/api/solicitudes/${request.id}/estado`,'administrativo',{ estado:'EN_REVISION' });
+    assert.equal(unassigned.status,409); assert.match(unassigned.data.error,/responsable/);
+    assert.equal((await call('PUT',`/api/solicitudes/${request.id}`,'administrativo',{ responsable_id:stack.accounts.administrativo.id })).status,200);
     assert.equal((await call('PUT',`/api/solicitudes/${request.id}/estado`,'administrativo',{ estado:'EN_REVISION' })).status,200);
     const transitions = await Promise.all(['REGISTRADA','ASIGNADA'].map(estado => call('PUT',`/api/solicitudes/${request.id}/estado`,'administrativo',{ estado })));
     assert.deepEqual(transitions.map(result => result.status).sort(),[200,409]);
