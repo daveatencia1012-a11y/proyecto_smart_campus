@@ -64,9 +64,10 @@ CREATE TABLE IF NOT EXISTS reservas (
   fecha DATE NOT NULL,
   hora_inicio TIME NOT NULL,
   hora_fin TIME NOT NULL,
-  estado ENUM('confirmada', 'cancelada', 'pendiente') DEFAULT 'pendiente',
+  estado ENUM('confirmada', 'cancelada', 'pendiente') DEFAULT 'confirmada',
   motivo_cancelacion TEXT NULL,
-  creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+  creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_reservas_calendario (recurso_id, fecha, estado, hora_inicio, hora_fin)
 );
 
 CREATE TABLE IF NOT EXISTS disponibilidad (
@@ -75,8 +76,17 @@ CREATE TABLE IF NOT EXISTS disponibilidad (
   fecha DATE NOT NULL,
   hora_inicio TIME NOT NULL,
   hora_fin TIME NOT NULL,
-  tipo ENUM('reserva', 'mantenimiento', 'bloqueo') NOT NULL
+  tipo ENUM('reserva', 'mantenimiento', 'bloqueo') NOT NULL,
+  INDEX idx_disponibilidad_calendario (recurso_id, fecha, hora_inicio, hora_fin)
 );
+
+-- Se conserva el ENUM legado 'reserva' para no perder datos existentes.
+-- La API solo crea mantenimiento/bloqueo; toda entrada legada sigue ocupando.
+CREATE TABLE IF NOT EXISTS calendario_locks (
+  recurso_id INT NOT NULL,
+  fecha DATE NOT NULL,
+  PRIMARY KEY (recurso_id, fecha)
+) ENGINE=InnoDB;
 
 USE resources_db;
 

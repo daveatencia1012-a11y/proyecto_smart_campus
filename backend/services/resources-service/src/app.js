@@ -5,6 +5,7 @@ dotenv.config();
 
 import recursosRoutes from './routes/recursos.js';
 import tiposRoutes from './routes/tipos.js';
+import serviciosRoutes from './routes/servicios.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(express.json());
 
 app.use('/api/recursos', recursosRoutes);
 app.use('/api/tipos', tiposRoutes);
+app.use('/api/servicios', serviciosRoutes);
 //Nuevo
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'resources-service' });
