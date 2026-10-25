@@ -5,10 +5,21 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import { rateLimit } from "express-rate-limit";
 import { pathToFileURL } from "node:url";
 
+const DEFAULT_CORS_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"];
+
+// Orígenes permitidos (DEF-04): lista separada por comas en CORS_ORIGINS.
+export function parseCorsOrigins(value) {
+  const origins = String(value || "").split(",").map(origin => origin.trim().replace(/\/$/, "")).filter(Boolean);
+  return origins.length ? origins : DEFAULT_CORS_ORIGINS;
+}
+
 export function createApp(options = {}) {
   const app = express();
   app.disable("x-powered-by");
-  app.use(cors());
+  const allowedOrigins = options.corsOrigins || parseCorsOrigins(process.env.CORS_ORIGINS);
+  // Sin cabecera Origin (curl, Postman, llamadas entre servicios) no aplica CORS y se permite.
+  // Un origen fuera de la lista no recibe Access-Control-Allow-Origin y el navegador bloquea la respuesta.
+  app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)) }));
   const services = options.services || {
     users: process.env.USERS_SERVICE_URL || "http://localhost:3201",
     requests: process.env.REQUESTS_SERVICE_URL || "http://localhost:3202",

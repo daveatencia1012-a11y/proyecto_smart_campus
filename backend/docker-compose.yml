@@ -159,6 +159,7 @@ services:
       - "3200:3200"
     environment:
       PORT: 3200
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
       USERS_SERVICE_URL: http://users-service:3201
       REQUESTS_SERVICE_URL: http://requests-service:3202
       RESERVATIONS_SERVICE_URL: http://reservations-service:3203
