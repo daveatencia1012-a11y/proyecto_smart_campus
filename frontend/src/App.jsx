@@ -7,7 +7,7 @@ import {
 
 import DashboardLayout from "./layouts/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
-import RoleDashboard from './pages/RoleDashboard';
+import Dashboard from "./pages/Dashboard";
 import Events from "./pages/Events";
 import Login from "./pages/Login";
 import Notifications from "./pages/Notifications";
@@ -42,13 +42,13 @@ function App() {
           <Route element={<DashboardLayout />}>
             
             <Route path="/home" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<RoleDashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route element={<RoleRoute roles={STAFF} />}>
-              <Route path="/gestion" element={<RoleDashboard operational />} />
+              <Route path="/gestion" element={<Navigate to="/dashboard" replace />} />
               <Route path="/gestion/:module" element={<ManagementModule />} />
             </Route>
             <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<RoleDashboard operational />} />
+              <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
               <Route path="/admin/:module" element={<AdministrationModule />} />
             </Route>
             <Route path="/services" element={<Services />} />
