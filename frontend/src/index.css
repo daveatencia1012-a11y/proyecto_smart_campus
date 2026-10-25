@@ -8315,6 +8315,26 @@ a .ui-icon {
   background:#075fa7;
 }
 
+/* En modo oscuro el azul institucional (#032f63) no contrasta con las superficies
+   oscuras: se usa la paleta oscura para textos, botones y acciones del shell. */
+:root[data-theme="dark"] .layout{
+  --primary:#4b96cc;
+  --primary-strong:#6aaedb;
+  --primary-soft:rgba(75,150,204,.18);
+  --accent:#53a3d6;
+}
+
+/* Botones de texto en estados vacíos: sin el fondo gris por defecto del navegador. */
+.reservations-page__empty button,
+.requests-page__empty button{
+  background:none;
+  border:0;
+  padding:0;
+  cursor:pointer;
+  font:inherit;
+  font-weight:800;
+}
+
 /* Login: same palette, preserving every existing control and interaction. */
 .login-page{
   --primary:#032f63;
