@@ -1,3 +1,6 @@
+-- Conexión en UTF-8 completo: sin esto el cliente de MySQL guarda las tildes dañadas (DEF-01).
+SET NAMES utf8mb4;
+
 USE reservations_db;
 
 CREATE TABLE IF NOT EXISTS calendario_locks (

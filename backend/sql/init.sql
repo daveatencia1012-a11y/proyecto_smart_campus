@@ -1,3 +1,6 @@
+-- Conexión en UTF-8 completo: sin esto el cliente de MySQL guarda las tildes dañadas (DEF-01).
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS users_db;
 CREATE DATABASE IF NOT EXISTS requests_db;
 CREATE DATABASE IF NOT EXISTS reservations_db;
