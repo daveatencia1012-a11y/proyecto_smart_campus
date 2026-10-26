@@ -235,8 +235,8 @@ function Header({ onMenuClick }) {
                 <Icon name="notifications" size={18} /> Notificaciones
               </Link>
               {isAdmin && (
-                <Link to="/admin" className="profile-menu__item" onClick={() => setProfileOpen(false)}>
-                  <Icon name="layout" size={17} /> Panel administrativo
+                <Link to="/settings" className="profile-menu__item" onClick={() => setProfileOpen(false)}>
+                  <Icon name="settings" size={17} /> Configuración
                 </Link>
               )}
               {!isAdmin && <Link to="/services" className="profile-menu__item" onClick={() => setProfileOpen(false)}>

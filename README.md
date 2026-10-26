@@ -606,6 +606,15 @@ pnpm run dev
 
 Vite mostrará en la terminal la dirección local donde quedó disponible el frontend.
 
+Para apuntar el frontend a un API Gateway distinto de `http://localhost:3200` (por ejemplo, el de otro equipo de la red), copie `frontend/.env.example` como `frontend/.env`, cambie `VITE_API_TARGET` y reinicie `pnpm run dev`:
+
+```bash
+cd frontend
+cp .env.example .env
+```
+
+El frontend siempre llama a rutas relativas `/api/...`; Vite las reenvía al Gateway configurado, por lo que no hay direcciones de servidor escritas en el código.
+
 El repositorio no fija explícitamente un puerto personalizado para la interfaz mediante `vite.config.js`; por ello debe utilizarse la dirección que Vite muestre al iniciar.
 
 ---
