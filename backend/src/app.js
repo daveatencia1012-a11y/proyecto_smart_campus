@@ -118,6 +118,11 @@ export function createApp(options = {}) {
     });
   });
 
+  // Rutas que no pertenecen a ningún servicio: 404 en JSON, igual que los microservicios.
+  app.use((req, res) => {
+    res.status(404).json({ error: "Ruta no encontrada" });
+  });
+
   return app;
 }
 
