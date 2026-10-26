@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { describe, it, after } from 'node:test';
@@ -165,7 +167,9 @@ describe('B-008/B-009: gateway y clientes HTTP', () => {
 });
 
 describe('B-003/B-004/B-012: despliegue versionado', () => {
-  it('el aprovisionamiento rechaza contraseñas ausentes, repetidas o no hex sin mostrarlas', () => {
+  it('el aprovisionamiento rechaza contraseñas ausentes, repetidas o no hex sin mostrarlas', t => {
+    // En Windows, "bash" puede ser el de WSL sin distribución instalada (DEF-07).
+    if (spawnSync('bash', ['-c', 'exit 0']).status !== 0) return t.skip('bash no disponible');
     const path = fileURLToPath(new URL('../sql/provision-users.sh', import.meta.url));
     const keys = ['USERS_DB_PASSWORD', 'REQUESTS_DB_PASSWORD', 'RESERVATIONS_DB_PASSWORD',
       'RESOURCES_DB_PASSWORD', 'EVENTS_DB_PASSWORD', 'NOTIFICATIONS_DB_PASSWORD'];
@@ -207,7 +211,12 @@ describe('B-003/B-004/B-012: despliegue versionado', () => {
       'USERS_DB_PASSWORD', 'REQUESTS_DB_PASSWORD', 'RESERVATIONS_DB_PASSWORD', 'RESOURCES_DB_PASSWORD', 'EVENTS_DB_PASSWORD', 'NOTIFICATIONS_DB_PASSWORD'];
     for (const key of variables) env[key] = randomBytes(32).toString('hex');
     const path = fileURLToPath(new URL('../docker-compose.yml', import.meta.url));
-    const args = ['compose', '--env-file', '/dev/null', '-f', path, 'config', '--no-env-resolution', '--quiet'];
+    // .env vacío temporal en vez de /dev/null, que no existe en Windows (DEF-07).
+    const dir = mkdtempSync(join(tmpdir(), 'campus-compose-'));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    const emptyEnv = join(dir, '.env');
+    writeFileSync(emptyEnv, '');
+    const args = ['compose', '--env-file', emptyEnv, '-f', path, 'config', '--no-env-resolution', '--quiet'];
     const ok = spawnSync('docker', args, { env, encoding: 'utf8' });
     assert.equal(ok.status, 0, ok.stderr);
     for (const value of [undefined, '']) {
