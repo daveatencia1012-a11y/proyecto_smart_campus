@@ -2,6 +2,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: campus-mysql
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Debes definir MYSQL_ROOT_PASSWORD}
       USERS_DB_PASSWORD: ${USERS_DB_PASSWORD:?Debes definir USERS_DB_PASSWORD}
@@ -16,17 +17,22 @@ services:
       - ./sql/migrations/002-role-interfaces.sql:/docker-entrypoint-initdb.d/zy-role-interfaces.sql:ro
       - ./sql/provision-users.sh:/docker-entrypoint-initdb.d/zz-app-users.sh:ro
       - ./sql/migrations:/migrations:ro
+    # Ping por TCP (127.0.0.1): el servidor temporal que MySQL usa para inicializar un
+    # volumen nuevo no acepta conexiones de red, así que no se reporta "healthy" hasta
+    # que arranca el servidor real (DEF-03). start_period da margen a esa inicialización.
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
   users-service:
     build:
       context: ./services/users-service
       dockerfile: dockerfile
     container_name: campus-users-service
+    restart: unless-stopped
     environment:
       DB_HOST: mysql
       DB_USER: campus_users
@@ -47,6 +53,7 @@ services:
       context: ./services/requests-service
       dockerfile: dockerfile
     container_name: campus-requests-service
+    restart: unless-stopped
     environment:
       DB_HOST: mysql
       DB_USER: campus_requests
@@ -66,6 +73,7 @@ services:
       context: ./services/reservations-service
       dockerfile: dockerfile
     container_name: campus-reservations-service
+    restart: unless-stopped
     environment:
       DB_HOST: mysql
       DB_USER: campus_reservations
@@ -87,6 +95,7 @@ services:
       context: ./services/resources-service
       dockerfile: dockerfile
     container_name: campus-resources-service
+    restart: unless-stopped
     environment:
       DB_HOST: mysql
       DB_USER: campus_resources
@@ -105,6 +114,7 @@ services:
       context: ./services/events-service
       dockerfile: dockerfile
     container_name: campus-events-service
+    restart: unless-stopped
     environment:
       DB_HOST: mysql
       DB_USER: campus_events
@@ -124,6 +134,7 @@ services:
       context: ./services/notifications-service
       dockerfile: dockerfile
     container_name: campus-notifications-service
+    restart: unless-stopped
     environment:
       DB_HOST: mysql
       DB_USER: campus_notifications
@@ -143,10 +154,12 @@ services:
       context: .
       dockerfile: dockerfile
     container_name: campus-gateway
+    restart: unless-stopped
     ports:
       - "3200:3200"
     environment:
       PORT: 3200
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
       USERS_SERVICE_URL: http://users-service:3201
       REQUESTS_SERVICE_URL: http://requests-service:3202
       RESERVATIONS_SERVICE_URL: http://reservations-service:3203
