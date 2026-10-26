@@ -663,14 +663,18 @@ cada endpoint vuelve a validar el rol y la propiedad del registro.
 
 ### Usuarios de demostración
 
-`backend/sql/seed.sql` crea estos usuarios ficticios. Todos usan la contraseña `Demo-Campus-2026`:
+`backend/sql/seed.sql` crea estos usuarios ficticios. Todos usan la contraseña `12345678`:
 
-| Rol | Correo |
-|---|---|
-| Docente | `carlos.mendoza@demo.uniajs.edu.co` |
-| Administrativo | `marta.herrera@demo.uniajs.edu.co` |
-| Estudiante | `sofia.castro@demo.uniajs.edu.co` |
-| Estudiante (inactivo) | `luis.ortega@demo.uniajs.edu.co` |
+| Rol | Nombre | Correo |
+|---|---|---|
+| Docente | Carlos Mendoza | `docente.demo@uniajs.edu.co` |
+| Docente | Diana Ruiz | `docente2.demo@uniajs.edu.co` |
+| Administrativo | Marta Herrera | `administrativo.demo@uniajs.edu.co` |
+| Administrativo | Andrés Pérez | `administrativo2.demo@uniajs.edu.co` |
+| Estudiante | Sofía Castro | `estudiante.demo@uniajs.edu.co` |
+| Estudiante | Juan Morales | `estudiante2.demo@uniajs.edu.co` |
+| Estudiante | Valentina Ríos | `estudiante3.demo@uniajs.edu.co` |
+| Estudiante (inactivo, no puede entrar) | Luis Ortega | `inactivo.demo@uniajs.edu.co` |
 
 ---
 

@@ -1,7 +1,7 @@
 -- Datos semilla ficticios para demostrar los flujos del Entregable 2.
 -- Se cargan solos al crear un volumen nuevo de MySQL (después de init.sql y 002).
 -- Todos los nombres y correos son inventados.
--- Contraseña de los usuarios de demostración: Demo-Campus-2026
+-- Contraseña de los usuarios de demostración: 12345678
 -- Las fechas son relativas al día en que se crea la base, para que las
 -- reservas y los eventos aparezcan siempre como próximos.
 SET NAMES utf8mb4;
@@ -12,14 +12,14 @@ SET NAMES utf8mb4;
 USE users_db;
 
 INSERT INTO users (id, nombre, email, password_hash, rol, activo) VALUES
-(2, 'Carlos Mendoza', 'carlos.mendoza@demo.uniajs.edu.co', '$2b$10$UB7Q1Drvs5GzuWTxKfk85OfAIutwdNzsDvpMWW2CpzFPJs9Gefa6C', 'docente', 1),
-(3, 'Diana Ruiz', 'diana.ruiz@demo.uniajs.edu.co', '$2b$10$UB7Q1Drvs5GzuWTxKfk85OfAIutwdNzsDvpMWW2CpzFPJs9Gefa6C', 'docente', 1),
-(4, 'Marta Herrera', 'marta.herrera@demo.uniajs.edu.co', '$2b$10$UB7Q1Drvs5GzuWTxKfk85OfAIutwdNzsDvpMWW2CpzFPJs9Gefa6C', 'administrativo', 1),
-(5, 'Andrés Pérez', 'andres.perez@demo.uniajs.edu.co', '$2b$10$UB7Q1Drvs5GzuWTxKfk85OfAIutwdNzsDvpMWW2CpzFPJs9Gefa6C', 'administrativo', 1),
-(6, 'Sofía Castro', 'sofia.castro@demo.uniajs.edu.co', '$2b$10$UB7Q1Drvs5GzuWTxKfk85OfAIutwdNzsDvpMWW2CpzFPJs9Gefa6C', 'estudiante', 1),
-(7, 'Juan Morales', 'juan.morales@demo.uniajs.edu.co', '$2b$10$UB7Q1Drvs5GzuWTxKfk85OfAIutwdNzsDvpMWW2CpzFPJs9Gefa6C', 'estudiante', 1),
-(8, 'Valentina Ríos', 'valentina.rios@demo.uniajs.edu.co', '$2b$10$UB7Q1Drvs5GzuWTxKfk85OfAIutwdNzsDvpMWW2CpzFPJs9Gefa6C', 'estudiante', 1),
-(9, 'Luis Ortega', 'luis.ortega@demo.uniajs.edu.co', '$2b$10$UB7Q1Drvs5GzuWTxKfk85OfAIutwdNzsDvpMWW2CpzFPJs9Gefa6C', 'estudiante', 0);
+(2, 'Carlos Mendoza', 'docente.demo@uniajs.edu.co', '$2b$10$rVhuhqFAG4lsu.46z3nPfu.vfbrF7/o43WMYKbgA3/sbJ0.f2AKGG', 'docente', 1),
+(3, 'Diana Ruiz', 'docente2.demo@uniajs.edu.co', '$2b$10$rVhuhqFAG4lsu.46z3nPfu.vfbrF7/o43WMYKbgA3/sbJ0.f2AKGG', 'docente', 1),
+(4, 'Marta Herrera', 'administrativo.demo@uniajs.edu.co', '$2b$10$rVhuhqFAG4lsu.46z3nPfu.vfbrF7/o43WMYKbgA3/sbJ0.f2AKGG', 'administrativo', 1),
+(5, 'Andrés Pérez', 'administrativo2.demo@uniajs.edu.co', '$2b$10$rVhuhqFAG4lsu.46z3nPfu.vfbrF7/o43WMYKbgA3/sbJ0.f2AKGG', 'administrativo', 1),
+(6, 'Sofía Castro', 'estudiante.demo@uniajs.edu.co', '$2b$10$rVhuhqFAG4lsu.46z3nPfu.vfbrF7/o43WMYKbgA3/sbJ0.f2AKGG', 'estudiante', 1),
+(7, 'Juan Morales', 'estudiante2.demo@uniajs.edu.co', '$2b$10$rVhuhqFAG4lsu.46z3nPfu.vfbrF7/o43WMYKbgA3/sbJ0.f2AKGG', 'estudiante', 1),
+(8, 'Valentina Ríos', 'estudiante3.demo@uniajs.edu.co', '$2b$10$rVhuhqFAG4lsu.46z3nPfu.vfbrF7/o43WMYKbgA3/sbJ0.f2AKGG', 'estudiante', 1),
+(9, 'Luis Ortega', 'inactivo.demo@uniajs.edu.co', '$2b$10$rVhuhqFAG4lsu.46z3nPfu.vfbrF7/o43WMYKbgA3/sbJ0.f2AKGG', 'estudiante', 0);
 
 -- ------------------------------------------------------------
 -- Recursos (resources_db)
