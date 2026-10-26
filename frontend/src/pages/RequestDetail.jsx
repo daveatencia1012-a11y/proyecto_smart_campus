@@ -111,7 +111,7 @@ function RequestDetail() {
         <div>
           <span className="requests-page__eyebrow">DETALLE DE SOLICITUD</span>
           <h1>{request.type}</h1>
-          <p>Solicitud #{request.id}</p>
+          <p>Solicitud {request.code}</p>
         </div>
         <span className={`request-detail__status request-detail__status--${request.status.toLowerCase().replaceAll(" ", "-")}`}>
           {request.status}
@@ -132,8 +132,8 @@ function RequestDetail() {
               <strong>{request.date}</strong>
             </div>
             <div>
-              <span>Número</span>
-              <strong>#{request.id}</strong>
+              <span>Código</span>
+              <strong>{request.code}</strong>
             </div>
             <div>
               <span>Dependencia</span>

@@ -9,6 +9,10 @@ const VALID_TRANSITIONS = {
   'RESUELTA': ['CERRADA', 'EN_PROCESO']
 };
 
+// Código visible de la solicitud (SOL-0007). Se deriva del id, así que es único sin columna extra.
+const codigo = id => `SOL-${String(id).padStart(4, '0')}`;
+const present = row => row && { ...row, codigo: codigo(row.id), transiciones_permitidas: VALID_TRANSITIONS[row.estado] || [] };
+
 class SolicitudModel {
   static async findAll(filters = {}) {
     let query = 'SELECT * FROM solicitudes WHERE 1=1';
@@ -24,12 +28,12 @@ class SolicitudModel {
     query += ' ORDER BY fecha_creacion DESC, id DESC LIMIT ? OFFSET ?';
     params.push(filters.limit ?? 100, filters.offset ?? 0);
     const [rows] = await pool.execute(query, params);
-    return rows.map(row => ({ ...row, transiciones_permitidas: VALID_TRANSITIONS[row.estado] || [] }));
+    return rows.map(present);
   }
 
   static async findById(id) {
     const [rows] = await pool.execute('SELECT * FROM solicitudes WHERE id = ?', [id]);
-    return rows[0] && { ...rows[0], transiciones_permitidas: VALID_TRANSITIONS[rows[0].estado] || [] };
+    return present(rows[0]);
   }
 
   static async create(data) {

@@ -500,6 +500,7 @@ El esquema se inicializa con:
 backend/sql/init.sql
 backend/sql/migrations/001-calendar.sql
 backend/sql/migrations/002-role-interfaces.sql
+backend/sql/seed.sql
 backend/sql/provision-users.sh
 ```
 
@@ -508,7 +509,9 @@ son aditivas y reejecutables: 001 añade el protocolo de bloqueo del calendario 
 002 añade configuración institucional, catálogo de servicios, alcance
 informativo de permisos, baja lógica de recursos y el estado por defecto
 `confirmada` para reservas nuevas. `provision-users.sh` crea las cuentas MySQL
-`campus_*` con permisos limitados a su propia base.
+`campus_*` con permisos limitados a su propia base. `seed.sql` carga datos
+ficticios de los seis dominios (usuarios, recursos, reservas, solicitudes, PQRS,
+eventos y notificaciones) para demostrar los flujos.
 
 En Docker Compose, un volumen nuevo ejecuta todo automáticamente. Un volumen
 existente requiere respaldo y aplicar las migraciones en orden; los pasos
@@ -658,7 +661,16 @@ Entre las rutas del frontend se encuentran:
 `/home` redirige a `/dashboard`. El guard de rutas solo controla la navegación:
 cada endpoint vuelve a validar el rol y la propiedad del registro.
 
-> No se incluyen credenciales de acceso en este README porque no se identificaron credenciales de demostración que puedan documentarse de forma segura y verificable.
+### Usuarios de demostración
+
+`backend/sql/seed.sql` crea estos usuarios ficticios. Todos usan la contraseña `Demo-Campus-2026`:
+
+| Rol | Correo |
+|---|---|
+| Docente | `carlos.mendoza@demo.uniajs.edu.co` |
+| Administrativo | `marta.herrera@demo.uniajs.edu.co` |
+| Estudiante | `sofia.castro@demo.uniajs.edu.co` |
+| Estudiante (inactivo) | `luis.ortega@demo.uniajs.edu.co` |
 
 ---
 

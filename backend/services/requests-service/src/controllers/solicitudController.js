@@ -13,7 +13,7 @@ async function notifyStatusChange(solicitud) {
       usuario_id: solicitud.usuario_id,
       tipo: 'SOLICITUD',
       titulo: 'Actualización de solicitud',
-      mensaje: `Tu solicitud #${solicitud.id} cambió de estado a ${solicitud.estado}`,
+      mensaje: `Tu solicitud ${solicitud.codigo} cambió de estado a ${solicitud.estado}`,
       referencia_id: solicitud.id,
       referencia_tipo: 'solicitud'
     }, { headers: { 'x-internal-token': process.env.INTERNAL_API_TOKEN } });
