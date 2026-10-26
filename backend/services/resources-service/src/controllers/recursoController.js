@@ -37,7 +37,7 @@ export const getRecursoById = async (req, res, next) => {
     const recurso = await Recurso.findById(id(req.params.id));
 
     if (!recurso) {
-      return res.status(404).json({ message: 'Recurso no encontrado' });
+      return res.status(404).json({ error: 'Recurso no encontrado' });
     }
 
     res.json(recurso);
@@ -54,7 +54,7 @@ export const updateRecurso = async (req, res, next) => {
     const recurso = await Recurso.update(recursoId, validateRecurso(req.body, true, current));
 
     if (!recurso) {
-      return res.status(404).json({ message: 'Recurso no encontrado' });
+      return res.status(404).json({ error: 'Recurso no encontrado' });
     }
 
     res.json(recurso);
@@ -68,7 +68,7 @@ export const updateDisponibilidad = async (req, res, next) => {
     const { disponible } = req.body || {};
 
     if (typeof disponible !== 'boolean') {
-      return res.status(400).json({ message: 'disponible debe ser un valor booleano' });
+      return res.status(400).json({ error: 'disponible debe ser un valor booleano' });
     }
 
     const recursoId = id(req.params.id);
@@ -78,7 +78,7 @@ export const updateDisponibilidad = async (req, res, next) => {
     const recurso = await Recurso.updateAvailability(recursoId, disponible);
 
     if (!recurso) {
-      return res.status(404).json({ message: 'Recurso no encontrado' });
+      return res.status(404).json({ error: 'Recurso no encontrado' });
     }
 
     res.json(recurso);
