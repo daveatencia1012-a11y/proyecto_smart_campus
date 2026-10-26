@@ -15,6 +15,8 @@ services:
       - mysql_data:/var/lib/mysql
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - ./sql/migrations/002-role-interfaces.sql:/docker-entrypoint-initdb.d/zy-role-interfaces.sql:ro
+      # Datos ficticios de demostración; solo se cargan al crear un volumen nuevo.
+      - ./sql/seed.sql:/docker-entrypoint-initdb.d/zyz-seed.sql:ro
       - ./sql/provision-users.sh:/docker-entrypoint-initdb.d/zz-app-users.sh:ro
       - ./sql/migrations:/migrations:ro
     # Ping por TCP (127.0.0.1): el servidor temporal que MySQL usa para inicializar un
