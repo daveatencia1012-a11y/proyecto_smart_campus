@@ -33,7 +33,7 @@ function Requests() {
     const normalizedSearch = search.toLowerCase().trim();
     return requests.filter((request) => {
       const matchesFilter = filter === "TODAS" || request.status === filter;
-      const searchable = `${request.type} ${request.description} ${request.id}`.toLowerCase();
+      const searchable = `${request.type} ${request.description} ${request.code}`.toLowerCase();
       const matchesSearch = searchable.includes(normalizedSearch);
       return matchesFilter && matchesSearch;
     });

@@ -123,12 +123,12 @@ USE notifications_db;
 
 INSERT INTO notificaciones (usuario_id, titulo, mensaje, tipo, referencia_id, referencia_tipo, leida, fecha_creacion) VALUES
 (6, 'Reserva creada', 'Tu reserva del Laboratorio de Sistemas 1 quedó confirmada.', 'reserva', 1, 'reserva', 0, NOW() - INTERVAL 2 HOUR),
-(6, 'Actualización de solicitud', 'Tu solicitud #5 cambió de estado a RESUELTA', 'solicitud', 5, 'solicitud', 1, NOW() - INTERVAL 7 DAY),
-(7, 'Actualización de solicitud', 'Tu solicitud #2 cambió de estado a EN_REVISION', 'solicitud', 2, 'solicitud', 0, NOW() - INTERVAL 2 DAY),
+(6, 'Actualización de solicitud', 'Tu solicitud SOL-0005 cambió de estado a RESUELTA', 'solicitud', 5, 'solicitud', 1, NOW() - INTERVAL 7 DAY),
+(7, 'Actualización de solicitud', 'Tu solicitud SOL-0002 cambió de estado a EN_REVISION', 'solicitud', 2, 'solicitud', 0, NOW() - INTERVAL 2 DAY),
 (7, 'Reserva creada', 'Tu reserva de la Sala de reuniones 1 quedó confirmada.', 'reserva', 2, 'reserva', 1, NOW() - INTERVAL 1 DAY),
-(8, 'Actualización de solicitud', 'Tu solicitud #3 cambió de estado a ASIGNADA', 'solicitud', 3, 'solicitud', 0, NOW() - INTERVAL 3 DAY),
+(8, 'Actualización de solicitud', 'Tu solicitud SOL-0003 cambió de estado a ASIGNADA', 'solicitud', 3, 'solicitud', 0, NOW() - INTERVAL 3 DAY),
 (8, 'Respuesta a tu PQRS', 'Tu PQRS "Más puntos de carga" fue respondida.', 'pqrs', 3, 'pqrs', 0, NOW() - INTERVAL 1 DAY),
 (8, 'Reserva cancelada', 'Tu reserva del Aula 101 fue cancelada.', 'reserva', 4, 'reserva', 1, NOW() - INTERVAL 12 HOUR),
-(2, 'Actualización de solicitud', 'Tu solicitud #4 cambió de estado a EN_PROCESO', 'solicitud', 4, 'solicitud', 0, NOW() - INTERVAL 4 DAY),
+(2, 'Actualización de solicitud', 'Tu solicitud SOL-0004 cambió de estado a EN_PROCESO', 'solicitud', 4, 'solicitud', 0, NOW() - INTERVAL 4 DAY),
 (6, 'Nuevo evento', 'Se publicó el evento "Semana de la Ingeniería".', 'evento', 1, 'evento', 0, NOW() - INTERVAL 5 HOUR),
 (1, 'Bienvenido a Smart Campus', 'La plataforma quedó lista con datos de demostración.', 'sistema', NULL, NULL, 0, NOW());

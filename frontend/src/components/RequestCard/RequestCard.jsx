@@ -12,7 +12,7 @@ function RequestCard({ request, onDelete }) {
         <div className="request-card__header">
           <div>
             <h3>{request.type}</h3>
-            <small>{request.date}</small>
+            <small>{request.code} · {request.date}</small>
           </div>
 
           <span

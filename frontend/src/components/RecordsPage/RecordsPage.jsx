@@ -11,7 +11,7 @@ const labels = {
 };
 const titles = { requests:'Solicitudes', pqrs:'PQRS', resources:'Recursos', reservations:'Reservas', events:'Eventos', users:'Usuarios', services:'Servicios institucionales' };
 const columns = {
-  requests:['id','tipo_servicio','dependencia','prioridad','estado','responsable_id'],
+  requests:['codigo','tipo_servicio','dependencia','prioridad','estado','responsable_id'],
   pqrs:['id','tipo','asunto','estado','respuesta'], resources:['id','codigo','nombre','tipo','ubicacion','estado','disponible'],
   reservations:['id','recurso_id','usuario_id','fecha','hora_inicio','hora_fin','estado'],
   events:['id','nombre','tipo','fecha','hora','lugar','publico'], users:['id','nombre','email','rol','activo'], services:['id','codigo','nombre','descripcion','activo']

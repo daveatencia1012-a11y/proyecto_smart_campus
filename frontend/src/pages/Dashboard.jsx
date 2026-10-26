@@ -104,7 +104,7 @@ function RequestProgress({ request, to }) {
         <strong>{request.type}</strong>
         <span className={`dash-status dash-status--${request.rawStatus.toLowerCase()}`}>{request.status}</span>
       </div>
-      <small>#{request.id} · {request.date}{request.dependency ? ` · ${request.dependency}` : ""}</small>
+      <small>{request.code} · {request.date}{request.dependency ? ` · ${request.dependency}` : ""}</small>
       <div className="dash-progress" aria-label={`Paso ${step + 1} de ${LIFECYCLE.length}`}>
         {LIFECYCLE.map((state, index) => <i key={state} className={index <= step ? "is-done" : ""} />)}
       </div>

@@ -14,6 +14,7 @@ function transformRequest(raw) {
   if (typeof history === 'string') { try { history = JSON.parse(history); } catch { history = []; } }
   return {
     id: raw.id,
+    code: raw.codigo || `#${raw.id}`,
     type: raw.tipo_servicio || "Solicitud",
     dependency: raw.dependencia || "",
     description: raw.descripcion || "",
