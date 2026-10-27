@@ -36,7 +36,8 @@ export const getRecursoById = async (req, res, next) => {
   try {
     const recurso = await Recurso.findById(id(req.params.id));
 
-    if (!recurso) {
+    // DEF-11: un recurso dado de baja responde 404, igual que en PUT.
+    if (!recurso || recurso.eliminado_en) {
       return res.status(404).json({ error: 'Recurso no encontrado' });
     }
 

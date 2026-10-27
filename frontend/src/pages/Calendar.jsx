@@ -5,8 +5,12 @@ import { getReservations } from '../services/reservationsService';
 import { listRecords, dateKey } from '../services/campusService';
 import Icon from "../components/Icon/Icon";
 
-const monthNames = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-const weekdayNames = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
+const weekdayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const keyOf = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+const monthLabel = (date) => capitalize(new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric" }).format(date).replace(" de ", " "));
+const longDay = (date) => capitalize(new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long" }).format(date));
+const shortDay = (date) => new Intl.DateTimeFormat("es-CO", { weekday: "short", day: "numeric", month: "short" }).format(date).replaceAll(".", "");
 
 function toReservationDate(value) {
   const [day, month, year] = value.split("/");
@@ -15,171 +19,188 @@ function toReservationDate(value) {
 
 function Calendar() {
   const today = new Date();
+  const todayKey = keyOf(today);
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const [selectedDate, setSelectedDate] = useState(
-    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
-  );
+  const [selectedDate, setSelectedDate] = useState(todayKey);
 
   const days = useMemo(() => {
     const year = cursor.getFullYear();
     const month = cursor.getMonth();
-    const first = new Date(year, month, 1);
-    const mondayIndex = (first.getDay() + 6) % 7;
+    const mondayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
     const total = new Date(year, month + 1, 0).getDate();
-    const previousTotal = new Date(year, month, 0).getDate();
-    const cells = [];
-
-    for (let i = mondayIndex - 1; i >= 0; i -= 1) {
-      const date = new Date(year, month - 1, previousTotal - i);
-      cells.push({ date, outside: true });
-    }
-    for (let day = 1; day <= total; day += 1) {
-      cells.push({ date: new Date(year, month, day), outside: false });
-    }
-    while (cells.length < 42) {
-      const date = new Date(year, month + 1, cells.length - total - mondayIndex + 1);
-      cells.push({ date, outside: true });
-    }
-    return cells;
+    // Solo las semanas necesarias (5 o 6), para no dejar una fila vacía del mes siguiente.
+    const length = Math.ceil((mondayIndex + total) / 7) * 7;
+    return Array.from({ length }, (_, index) => {
+      const date = new Date(year, month, index - mondayIndex + 1);
+      return { date, key: keyOf(date), outside: date.getMonth() !== month };
+    });
   }, [cursor]);
 
   const load = useCallback(async () => {
-    const format = date => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-    const range = { fecha_desde:format(days[0].date), fecha_hasta:format(days.at(-1).date) };
+    const range = { fecha_desde: days[0].key, fecha_hasta: days.at(-1).key };
     const [reservations, events] = await Promise.all([getReservations(range), listRecords('events', range)]);
     return { reservations, events };
   }, [days]);
   const { data, loading, error, reload } = useResource(load);
-  const storedReservations = useMemo(() => (data?.reservations || []).filter(row => row.status !== 'CANCELADA'), [data]);
-  const storedEvents = useMemo(() => (data?.events || []).map(row => ({ ...row, date:dateKey(row.fecha), title:row.nombre, time:row.hora, location:row.lugar })), [data]);
 
   const itemsByDate = useMemo(() => {
     const map = {};
-    storedReservations.forEach((item) => {
-      const key = toReservationDate(item.date);
-      if (!map[key]) map[key] = [];
-      map[key].push({ ...item, kind: "reservation", label: item.resource, time: `${item.startTime} – ${item.endTime}` });
-    });
-    storedEvents.forEach((item) => {
-      if (!map[item.date]) map[item.date] = [];
-      map[item.date].push({ ...item, kind: "event", label: item.title, time: item.time });
-    });
+    const add = (key, item) => { (map[key] ||= []).push(item); };
+    (data?.reservations || []).filter((row) => row.status !== 'CANCELADA').forEach((row) => add(toReservationDate(row.date), {
+      id: row.id, kind: "reservation", label: row.resource, start: row.startTime, time: `${row.startTime} – ${row.endTime}`,
+      location: row.location, detail: row.type, to: `/reservations/${row.id}`,
+    }));
+    (data?.events || []).forEach((row) => add(dateKey(row.fecha), {
+      id: row.id, kind: "event", label: row.nombre, start: String(row.hora).slice(0, 5), time: String(row.hora).slice(0, 5),
+      location: row.lugar, detail: row.publico ? "Evento público" : "Evento privado", to: "/events",
+    }));
+    Object.values(map).forEach((items) => items.sort((a, b) => a.start.localeCompare(b.start)));
     return map;
-  }, [storedReservations, storedEvents]);
+  }, [data]);
 
-  const selectedItems = itemsByDate[selectedDate] || [];
+  const monthKeys = days.filter((day) => !day.outside).map((day) => day.key);
+  const monthItems = monthKeys.flatMap((key) => itemsByDate[key] || []);
+  const monthReservations = monthItems.filter((item) => item.kind === "reservation").length;
+  const monthEvents = monthItems.length - monthReservations;
+  const upcoming = Object.keys(itemsByDate).filter((key) => key >= todayKey).sort()
+    .flatMap((key) => itemsByDate[key].map((item) => ({ ...item, key }))).slice(0, 4);
+
   const selected = new Date(`${selectedDate}T12:00:00`);
+  const selectedItems = itemsByDate[selectedDate] || [];
 
-  const formatSelected = new Intl.DateTimeFormat("es-CO", {
-    weekday: "long", day: "numeric", month: "long"
-  }).format(selected);
-
-  const changeMonth = (offset) => {
-    setCursor((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
-  };
-
+  const changeMonth = (offset) => setCursor((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
   const goToday = () => {
     setCursor(new Date(today.getFullYear(), today.getMonth(), 1));
-    setSelectedDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`);
+    setSelectedDate(todayKey);
+  };
+  const selectDay = (day) => {
+    setSelectedDate(day.key);
+    if (day.outside) setCursor(new Date(day.date.getFullYear(), day.date.getMonth(), 1));
   };
 
   return (
-    <main className="calendar-page">
-      <section className="calendar-page__hero">
+    <main className="role-page calendar-view">
+      <header className="calendar-view__heading">
         <div>
-          <span className="calendar-page__eyebrow">AGENDA SMART CAMPUS</span>
+          <span className="panel__eyebrow">AGENDA SMART CAMPUS</span>
           <h1>Calendario universitario</h1>
-          <p>Organiza en una sola vista tus reservas y actividades institucionales. Selecciona un día para consultar el detalle.</p>
+          <p>Tus reservas y las actividades institucionales en una sola vista. Selecciona un día para ver su agenda.</p>
         </div>
-        <div className="calendar-page__actions">
-          <button className="calendar-page__button" type="button" onClick={goToday}>
-            <Icon name="calendar" size={17} /> Hoy
-          </button>
-          <Link className="calendar-page__button calendar-page__button--primary" to="/reservations">
-            <Icon name="plus" size={17} /> Nueva reserva
-          </Link>
-        </div>
-      </section>
+        <Link className="button button--primary calendar-view__cta" to="/reservations">
+          <Icon name="plus" size={16} /> Nueva reserva
+        </Link>
+      </header>
 
-      {error && <p className="role-message" role="alert">{error} <button onClick={reload}>Reintentar</button></p>}
-      {loading && <p role="status">Cargando agenda real…</p>}
-      <section className="calendar-page__layout">
-        <article className="panel calendar">
-          <div className="calendar__toolbar">
-            <div className="calendar__month">
-              <button className="calendar__nav" type="button" onClick={() => changeMonth(-1)} aria-label="Mes anterior"><Icon name="arrowLeft" size={16} /></button>
-              <h2>{monthNames[cursor.getMonth()]} {cursor.getFullYear()}</h2>
-              <button className="calendar__nav" type="button" onClick={() => changeMonth(1)} aria-label="Mes siguiente"><Icon name="arrowRight" size={16} /></button>
+      {error && (
+        <p className="calendar-view__notice" role="alert">
+          <Icon name="alert" size={17} /> No fue posible cargar la agenda: {error}
+          <button type="button" className="button button--secondary" onClick={reload}>Reintentar</button>
+        </p>
+      )}
+
+      <section className="calendar-view__layout">
+        <article className="calendar-view__board">
+          <div className="calendar-view__toolbar">
+            <div className="calendar-view__month">
+              <button className="records-action" type="button" onClick={() => changeMonth(-1)} aria-label="Mes anterior" title="Mes anterior"><Icon name="arrowLeft" size={16} /></button>
+              <h2 aria-live="polite">{monthLabel(cursor)}</h2>
+              <button className="records-action" type="button" onClick={() => changeMonth(1)} aria-label="Mes siguiente" title="Mes siguiente"><Icon name="arrowRight" size={16} /></button>
+              <button className="calendar-view__today" type="button" onClick={goToday}>Hoy</button>
+              {loading && <span className="calendar-view__loading"><Icon name="refresh" size={14} /> Actualizando…</span>}
             </div>
-            <div className="calendar__legend">
-              <span><i className="calendar__dot" /> Reservas</span>
-              <span><i className="calendar__dot calendar__dot--event" /> Eventos</span>
-              <span><i className="calendar__dot calendar__dot--today" /> Hoy</span>
+            <div className="calendar-view__summary">
+              <span className="calendar-view__chip calendar-view__chip--reservation"><i aria-hidden="true" />{monthReservations} {monthReservations === 1 ? "reserva" : "reservas"}</span>
+              <span className="calendar-view__chip calendar-view__chip--event"><i aria-hidden="true" />{monthEvents} {monthEvents === 1 ? "evento" : "eventos"}</span>
             </div>
           </div>
 
-          <div className="calendar__weekdays">
-            {weekdayNames.map((day) => <span className="calendar__weekday" key={day}>{day}</span>)}
+          <div className="calendar-view__weekdays" aria-hidden="true">
+            {weekdayNames.map((day) => <span key={day}>{day}</span>)}
           </div>
 
-          <div className="calendar__grid">
-            {days.map(({ date, outside }) => {
-              const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-              const dayItems = itemsByDate[key] || [];
-              const isToday = key === `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+          <div className={`calendar-view__grid${loading ? " calendar-view__grid--loading" : ""}`}>
+            {days.map((day) => {
+              const dayItems = itemsByDate[day.key] || [];
+              const classes = ["calendar-view__day"];
+              if (day.outside) classes.push("calendar-view__day--outside");
+              if (day.key === todayKey) classes.push("calendar-view__day--today");
+              if (day.key === selectedDate) classes.push("calendar-view__day--selected");
+              if ([0, 6].includes(day.date.getDay())) classes.push("calendar-view__day--weekend");
               return (
-                <button
-                  className={`calendar__day ${outside ? "calendar__day--outside" : ""} ${key === selectedDate ? "calendar__day--selected" : ""} ${isToday ? "calendar__day--today" : ""}`}
-                  key={key}
-                  type="button"
-                  onClick={() => setSelectedDate(key)}
-                >
-                  <span className="calendar__number">{date.getDate()}</span>
-                  <span className="calendar__items">
+                <button key={day.key} type="button" className={classes.join(" ")} onClick={() => selectDay(day)}
+                  aria-pressed={day.key === selectedDate}
+                  aria-label={`${longDay(day.date)}${day.key === todayKey ? ", hoy" : ""}: ${dayItems.length ? `${dayItems.length} ${dayItems.length === 1 ? "actividad" : "actividades"}` : "sin actividades"}`}>
+                  <span className="calendar-view__number">{day.date.getDate()}</span>
+                  <span className="calendar-view__items">
                     {dayItems.slice(0, 2).map((item) => (
-                      <span className={`calendar__item ${item.kind === "event" ? "calendar__item--event" : ""}`} key={`${item.kind}-${item.id}`}>
-                        {item.kind === "reservation" ? "Reserva · " : "Evento · "}{item.label}
+                      <span key={`${item.kind}-${item.id}`} className={`calendar-view__item calendar-view__item--${item.kind}`}>
+                        <b>{item.start}</b> {item.label}
                       </span>
                     ))}
-                    {dayItems.length > 2 && <span className="calendar__more">+{dayItems.length - 2} más</span>}
+                    {dayItems.length > 2 && <span className="calendar-view__more">+{dayItems.length - 2} más</span>}
                   </span>
+                  {dayItems.length > 0 && (
+                    <span className="calendar-view__dots" aria-hidden="true">
+                      {dayItems.slice(0, 3).map((item) => <i key={`${item.kind}-${item.id}`} className={`calendar-view__dot--${item.kind}`} />)}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
         </article>
 
-        <aside className="calendar__aside">
-          <article className="panel calendar__selected">
-            <span className="panel__eyebrow">AGENDA DEL DÍA</span>
-            <div className="calendar__selected-date">
-              <span className="calendar__selected-number">{selected.getDate()}</span>
-              <div><small>{selected.getFullYear()}</small><h3>{formatSelected}</h3></div>
+        <aside className="calendar-view__aside">
+          <article className="calendar-view__agenda">
+            <div className="calendar-view__date">
+              <span className="calendar-view__date-number">{selected.getDate()}</span>
+              <div>
+                <span className="panel__eyebrow">{selectedDate === todayKey ? "HOY" : "AGENDA DEL DÍA"}</span>
+                <h3>{longDay(selected)}</h3>
+                <small>{selectedItems.length ? `${selectedItems.length} ${selectedItems.length === 1 ? "actividad" : "actividades"}` : "Sin actividades"} · {selected.getFullYear()}</small>
+              </div>
             </div>
 
             {selectedItems.length ? (
-              <div className="calendar__agenda">
+              <ol className="calendar-view__list">
                 {selectedItems.map((item) => (
-                  <div className="calendar__agenda-item" key={`${item.kind}-${item.id}`}>
-                    <span className="calendar__agenda-tag">{item.kind === "reservation" ? "RESERVA" : "EVENTO"}</span>
-                    <strong>{item.label}</strong>
-                    <p>{item.time}<br />{item.location}</p>
-                    {item.kind === "reservation" && <Link to={`/reservations/${item.id}`} className="form-helper">Ver reserva →</Link>}
-                  </div>
+                  <li key={`${item.kind}-${item.id}`} className={`calendar-view__entry calendar-view__entry--${item.kind}`}>
+                    <span className="calendar-view__entry-icon"><Icon name={item.kind === "reservation" ? "reservations" : "events"} size={17} /></span>
+                    <div>
+                      <span className="calendar-view__entry-tag">{item.kind === "reservation" ? "Reserva" : "Evento"} · {item.detail}</span>
+                      <strong>{item.label}</strong>
+                      <small><Icon name="clock" size={13} /> {item.time}{item.location ? <> · <Icon name="location" size={13} /> {item.location}</> : null}</small>
+                    </div>
+                    <Link to={item.to} className="records-action" aria-label={`Abrir ${item.label}`} title="Abrir"><Icon name="arrowUpRight" size={15} /></Link>
+                  </li>
                 ))}
-              </div>
+              </ol>
             ) : (
-              <div className="calendar__empty">
+              <div className="calendar-view__empty">
                 <Icon name="calendar" size={24} />
                 <p>No hay actividades programadas para este día.</p>
+                <Link to="/reservations">Reservar un espacio <Icon name="arrowRight" size={14} /></Link>
               </div>
             )}
           </article>
 
-          <div className="calendar__tips">
-            <strong>💡 Consejo</strong>
-            <p>Usa el calendario para detectar rápidamente cruces de horario y planificar tus reservas alrededor de eventos institucionales.</p>
-          </div>
+          <article className="calendar-view__upcoming">
+            <h3><Icon name="clock" size={16} /> Próximas actividades</h3>
+            {upcoming.length ? (
+              <ul>
+                {upcoming.map((item) => (
+                  <li key={`${item.kind}-${item.id}`}>
+                    <button type="button" onClick={() => setSelectedDate(item.key)}>
+                      <i className={`calendar-view__dot--${item.kind}`} aria-hidden="true" />
+                      <span><strong>{item.label}</strong><small>{shortDay(new Date(`${item.key}T12:00:00`))} · {item.start}</small></span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No hay actividades próximas en las fechas visibles.</p>
+            )}
+          </article>
         </aside>
       </section>
     </main>
