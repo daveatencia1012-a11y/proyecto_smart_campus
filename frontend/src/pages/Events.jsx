@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import Icon from "../components/Icon/Icon";
@@ -9,6 +9,7 @@ import { EVENT_EDITORS, canEditEvent } from "../services/roles";
 
 const monthNames = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 const types = ["academico", "institucional", "cultural", "deportivo", "otro"];
+const typeLabels = { academico: "Académico", institucional: "Institucional", cultural: "Cultural", deportivo: "Deportivo", otro: "Otro" };
 const emptyDraft = { nombre: "", descripcion: "", fecha: "", hora: "", lugar: "", tipo: "academico", publico: true };
 const loadEvents = () => listRecords("events");
 
@@ -28,6 +29,15 @@ function Events() {
   const [saving, setSaving] = useState(false);
 
   const filters = editor ? ["TODOS", "PRÓXIMOS", "MIS EVENTOS"] : ["TODOS", "PRÓXIMOS"];
+  const formOpen = Boolean(form);
+
+  // Escape cierra el formulario (salvo mientras guarda).
+  useEffect(() => {
+    if (!formOpen) return undefined;
+    const onKey = (e) => { if (e.key === "Escape" && !saving) setForm(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [formOpen, saving]);
 
   const filteredEvents = useMemo(() => {
     const term = search.toLowerCase().trim();
@@ -161,21 +171,67 @@ function Events() {
       </section>
 
       {form && createPortal(
-        <div className="role-modal-backdrop">
-          <form className="role-modal panel" onSubmit={submit} aria-label="Formulario de evento">
-            <h2>{form.id ? "Editar evento" : "Publicar evento"}</h2>
-            <label>Nombre<input required maxLength={150} value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></label>
-            <label>Descripción<textarea rows="4" maxLength={10000} value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} /></label>
-            <label>Fecha<input required type="date" value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} /></label>
-            <label>Hora<input required type="time" value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} /></label>
-            <label>Lugar<input required maxLength={100} value={form.lugar} onChange={(e) => setForm({ ...form, lugar: e.target.value })} /></label>
-            <label>Tipo<select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>{types.map((type) => <option key={type} value={type}>{type}</option>)}</select></label>
-            <label><input type="checkbox" checked={form.publico} onChange={(e) => setForm({ ...form, publico: e.target.checked })} /> Visible para toda la comunidad</label>
-            {message && <p role="alert">{message}</p>}
-            <div className="role-actions">
-              <button type="button" className="button button--secondary" onClick={() => setForm(null)} disabled={saving}>Cerrar</button>
-              <button className="button button--primary" disabled={saving}>{saving ? "Guardando…" : "Guardar"}</button>
+        <div className="role-modal-backdrop event-form-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !saving) setForm(null); }}>
+          <form className="event-form" onSubmit={submit} aria-labelledby="event-form-title">
+            <header className="event-form__header">
+              <span className="event-form__icon" aria-hidden="true"><Icon name="events" size={20} /></span>
+              <div>
+                <span className="panel__eyebrow">{form.id ? "EDITAR EVENTO" : "NUEVO EVENTO"}</span>
+                <h2 id="event-form-title">{form.id ? "Editar evento" : "Publicar evento"}</h2>
+                <p>Los campos con * son obligatorios.</p>
+              </div>
+              <button type="button" className="event-form__close" onClick={() => setForm(null)} disabled={saving} aria-label="Cerrar formulario">
+                <Icon name="close" size={18} />
+              </button>
+            </header>
+
+            <div className="event-form__grid">
+              <label className="event-form__full">
+                <span>Nombre del evento *</span>
+                <input required maxLength={150} placeholder="Ej. Semana de la Ingeniería" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+              </label>
+              <label>
+                <span>Tipo *</span>
+                <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
+                  {types.map((type) => <option key={type} value={type}>{typeLabels[type]}</option>)}
+                </select>
+              </label>
+              <label>
+                <span>Lugar *</span>
+                <input required maxLength={100} placeholder="Ej. Auditorio principal" value={form.lugar} onChange={(e) => setForm({ ...form, lugar: e.target.value })} />
+              </label>
+              <label>
+                <span>Fecha *</span>
+                <input required type="date" min={form.id ? undefined : todayKey()} value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} />
+              </label>
+              <label>
+                <span>Hora *</span>
+                <input required type="time" value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} />
+              </label>
+              <label className="event-form__full">
+                <span>Descripción</span>
+                <textarea rows="4" maxLength={1000} placeholder="¿De qué trata el evento y a quién va dirigido?" value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
+                <small className="form-helper">{form.descripcion.length}/1000 caracteres</small>
+              </label>
+              <label className="event-form__visibility event-form__full">
+                <input type="checkbox" checked={form.publico} onChange={(e) => setForm({ ...form, publico: e.target.checked })} />
+                <span className="event-form__switch" aria-hidden="true" />
+                <span>
+                  <strong>{form.publico ? "Evento público" : "Evento privado"}</strong>
+                  <small>{form.publico ? "Visible para toda la comunidad." : "Solo lo ven tú y los administradores."}</small>
+                </span>
+              </label>
             </div>
+
+            {message && <p className="event-form__error" role="alert"><Icon name="alert" size={16} /> {message}</p>}
+
+            <footer className="event-form__actions">
+              <button type="button" className="button button--secondary" onClick={() => setForm(null)} disabled={saving}>Cancelar</button>
+              <button className="button button--primary" disabled={saving}>
+                <Icon name={form.id ? "check" : "plus"} size={16} />
+                {saving ? "Guardando…" : form.id ? "Guardar cambios" : "Publicar evento"}
+              </button>
+            </footer>
           </form>
         </div>,
         document.body
