@@ -9138,3 +9138,40 @@ a .ui-icon {
   .event-form__actions { flex-direction:column-reverse; }
   .event-form__actions .button { width:100%; }
 }
+
+/* Roles y permisos (administrador) */
+.roles-view { gap:22px; }
+.roles-view__heading { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.roles-view__heading h1 { margin:4px 0 6px; color:var(--text); }
+.roles-view__heading p { max-width:720px; margin:0; color:var(--text-soft); font-size:13px; }
+.roles-view__loading { color:var(--text-muted); }
+.roles-view__cards { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+.roles-view__card { display:grid; gap:8px; align-content:start; padding:18px; text-align:left; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface-solid); color:var(--text); cursor:pointer; transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+.roles-view__card:hover { border-color:var(--border-strong); transform:translateY(-1px); }
+.roles-view__card.is-selected { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft); }
+.roles-view__card strong { font-size:16px; }
+.roles-view__card small { color:var(--text-soft); font-size:12px; line-height:1.5; }
+.roles-view__card-icon { width:40px; height:40px; display:grid; place-items:center; border-radius:12px; background:var(--primary-soft); color:var(--primary); }
+.roles-view__card.is-selected .roles-view__card-icon { background:var(--primary); color:#fff; }
+.roles-view__stats { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+.roles-view__stats span { padding:3px 8px; border-radius:999px; background:var(--surface-soft); color:var(--text-soft); font-size:10px; font-weight:750; }
+.roles-view__matrix { display:grid; gap:16px; }
+.roles-view__matrix-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.roles-view__matrix-head h2 { margin:4px 0 0; color:var(--text); }
+.roles-view__legend { display:flex; flex-wrap:wrap; gap:14px; margin:0; padding:0; list-style:none; color:var(--text-muted); font-size:11px; }
+.roles-view__legend li { display:flex; align-items:center; gap:6px; }
+.roles-view__table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius-sm); }
+.roles-view__table { width:100%; min-width:560px; border-collapse:collapse; font-size:13px; }
+.roles-view__table th, .roles-view__table td { padding:11px 14px; border-bottom:1px solid var(--border); text-align:left; }
+.roles-view__table thead th { background:var(--surface-soft); color:var(--text-soft); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+.roles-view__table tbody th { color:var(--text); font-weight:750; }
+.roles-view__table tbody tr:last-child th, .roles-view__table tbody tr:last-child td { border-bottom:0; }
+.roles-view__table tbody tr:hover { background:var(--surface-hover); }
+.roles-view__scope { display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-size:11px; font-weight:750; white-space:nowrap; }
+.roles-view__scope--todos { background:rgba(22,163,74,.12); color:#15803d; }
+.roles-view__scope--propio { background:rgba(217,119,6,.12); color:#b45309; }
+:root[data-theme="dark"] .roles-view__scope--todos { color:#86efac; }
+:root[data-theme="dark"] .roles-view__scope--propio { color:#fcd34d; }
+.roles-view__none { color:var(--text-muted); font-weight:700; }
+@media (max-width: 1100px) { .roles-view__cards { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width: 560px) { .roles-view__cards { grid-template-columns:1fr; } }
