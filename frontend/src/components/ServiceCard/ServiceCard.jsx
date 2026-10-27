@@ -1,33 +1,41 @@
 import { Link } from "react-router-dom";
 import Icon from "../Icon/Icon";
+import ServiceIllustration from "../ServiceIllustration/ServiceIllustration";
+
+// Iconos con ilustración y color propios; el resto usa el edificio y el color institucional.
+const THEMES = ["requests", "reservations", "resources", "events", "notifications", "pqrs"];
+
+// Módulo de la aplicación al que lleva cada servicio del catálogo.
+const MODULES = {
+  solicitudes: "/requests",
+  reservas: "/reservations",
+  recursos: "/resources",
+  eventos: "/events",
+  notificaciones: "/notifications",
+  pqrs: "/pqrs",
+};
 
 function ServiceCard({ service }) {
-  const route = `/services/${service.id}`;
+  const route = MODULES[service.code] || `/services/${service.id}`;
+  const theme = THEMES.includes(service.icon) ? service.icon : "building";
 
   return (
-    <article className="service-card">
-      <div className="service-card__top">
-        <span className="service-card__icon" aria-hidden="true">
-          <Icon name={service.icon} size={21} />
-        </span>
-
-        <span className="service-card__arrow" aria-hidden="true">
-          <Icon name="arrowUpRight" size={17} />
+    <article className={`service-tile service-tile--${theme}`}>
+      <div className="service-tile__media">
+        <ServiceIllustration name={service.icon} />
+        <span className="service-tile__badge" aria-hidden="true">
+          <Icon name={service.icon} size={20} />
         </span>
       </div>
 
-      <h3 className="service-card__title">
-        {service.name}
-      </h3>
-
-      <p className="service-card__description">
-        {service.description}
-      </p>
-
-      <Link className="service-card__link" to={route}>
-        Ver servicio
-        <Icon name="arrowRight" size={17} />
-      </Link>
+      <div className="service-tile__body">
+        <h3 className="service-tile__title">{service.name}</h3>
+        <p className="service-tile__description">{service.description}</p>
+        <Link className="service-tile__link" to={route}>
+          Abrir servicio
+          <Icon name="arrowRight" size={16} />
+        </Link>
+      </div>
     </article>
   );
 }
