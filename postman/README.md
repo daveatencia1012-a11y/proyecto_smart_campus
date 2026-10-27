@@ -26,7 +26,8 @@ Cada ejecución crea sus propios datos de prueba (estudiantes con correo único 
 | 03 · Solicitudes | T08 crear (REGISTRADA), datos inválidos (400), permisos (401 y 403), T09 avanzar sin responsable y saltar estados (409), asignar responsable y avanzar a EN_REVISION |
 | 04 · PQRS | Crear, tipo y campos inválidos (400), saltar de estado (409), pasar a revisión y responder como staff, respuesta vacía (400), estudiante sin permiso (403), inexistente (404) |
 | 05 · Reservas | T10 reserva válida, T11 solapada (409), contigua permitida, horas y fecha inválidas (400), recurso inexistente (404), cancelar y volver a reservar |
-| 06 y 07 | Pendientes: Recursos y Eventos (SD2-19) |
+| 06 · Recursos | T01 listar, T02 crear válido, T03 crear sin nombre (400), estudiante sin permiso (403), T04 consultar existente, T05 inexistente (404), T06 actualizar ubicación y T07 dar de baja (204) |
+| 07 · Eventos | Prepara un docente, crea un evento, crear sin lugar (400), estudiante sin permiso (403), el estudiante lo ve en la lista, el docente lo actualiza y el admin lo elimina (204) |
 | 08 · Notificaciones | Listar y contar no leídas, marcar como leída (persistido), marcar todas, eliminar; ajena (403), inexistente (404), sin token (401), creación externa bloqueada (403) |
 | 98 · T12 | Persistencia tras reinicio: consulta los registros creados antes de `docker compose restart` |
 | 99 · T14 | Servicio de eventos detenido: el Gateway responde 502/504 controlado y `/health` 503 |
