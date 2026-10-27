@@ -123,14 +123,20 @@ function Events() {
         </div>
       </section>
 
-      {(error || message) && <p className="role-message" role="status">{error || message}</p>}
+      {message && !form && <p className="role-message" role="status">{message}</p>}
 
       <section className="service-page__section">
         <div className="service-page__section-heading">
           <div><span className="panel__eyebrow">AGENDA ACADÉMICA</span><h2>Eventos</h2></div>
           <span className="service-page__count">{filteredEvents.length}</span>
         </div>
-        {loading ? <p>Cargando eventos…</p> : !filteredEvents.length ? <p className="role-empty panel">No hay eventos para mostrar.</p> : (
+        {/* DEF-10: si la carga falla se muestra solo el error, no también la lista vacía. */}
+        {loading ? <p role="status">Cargando eventos…</p> : error ? (
+          <div className="role-empty panel" role="alert">
+            <p>{error}</p>
+            <button type="button" className="button button--secondary" onClick={reload}>Reintentar</button>
+          </div>
+        ) : !filteredEvents.length ? <p className="role-empty panel">No hay eventos para mostrar.</p> : (
           <div className="events-page__grid">
             {filteredEvents.map((event) => {
               const key = dateKey(event.fecha);

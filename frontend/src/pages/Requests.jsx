@@ -25,9 +25,11 @@ function Requests() {
     prioridad: "MEDIA",
     descripcion: "",
   });
-  const [actionError, setError] = useState('');
-  const { loading, reload:loadRequests } = resource;
-  const error = actionError || resource.error;
+  const [formError, setFormError] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+  const { loading, error, reload:loadRequests } = resource;
 
   const filteredRequests = useMemo(() => {
     const normalizedSearch = search.toLowerCase().trim();
@@ -41,10 +43,16 @@ function Requests() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.tipo_servicio || !form.dependencia || !form.descripcion.trim()) return;
+    if (saving) return;
+    setFormError("");
+    // DEF-09: indicar el campo que falta en lugar de no hacer nada.
+    if (!form.descripcion.trim()) {
+      setDescriptionError("La descripción es obligatoria.");
+      return;
+    }
 
+    setSaving(true);
     try {
-      setError("");
       await createRequest({
         tipo_servicio: form.tipo_servicio,
         dependencia: form.dependencia,
@@ -53,19 +61,31 @@ function Requests() {
       });
       setForm({ tipo_servicio: "Solicitud de recurso", dependencia: "Soporte TI", prioridad: "MEDIA", descripcion: "" });
       setIsFormOpen(false);
+      setActionMessage("Solicitud registrada correctamente.");
       loadRequests();
     } catch (err) {
-      setError(err.message || "Error al crear la solicitud.");
+      if (!err.cancelled) setFormError(err.message || "Error al crear la solicitud.");
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async (id) => {
+    setActionMessage("");
     try {
       await deleteRequest(id);
+      setActionMessage("Solicitud eliminada.");
       loadRequests();
     } catch (err) {
-      setError(err.message || "Error al eliminar la solicitud.");
+      if (!err.cancelled) setActionMessage(err.message || "Error al eliminar la solicitud.");
     }
+  };
+
+  const openForm = () => {
+    setFormError("");
+    setDescriptionError("");
+    setActionMessage("");
+    setIsFormOpen(true);
   };
 
   return (
@@ -76,7 +96,7 @@ function Requests() {
           <h1>Mis solicitudes</h1>
           <p>Registra, consulta y realiza seguimiento a tus solicitudes desde un solo lugar.</p>
         </div>
-        <button className="requests-page__new-button" type="button" onClick={() => setIsFormOpen((open) => !open)}>
+        <button className="requests-page__new-button" type="button" onClick={() => (isFormOpen ? setIsFormOpen(false) : openForm())}>
           <Icon name="plus" size={18} />
           Nueva solicitud
         </button>
@@ -93,7 +113,7 @@ function Requests() {
               <Icon name="close" size={18} />
             </button>
           </div>
-          <form className="requests-form__body" onSubmit={handleSubmit}>
+          <form className="requests-form__body" onSubmit={handleSubmit} noValidate>
             <div className="requests-form__grid">
               <label>
                 <span>Tipo de solicitud</span>
@@ -114,19 +134,34 @@ function Requests() {
                 </select>
               </label>
               <label className="requests-form__full">
-                <span>Descripción</span>
-                <textarea name="descripcion" rows="4" value={form.descripcion} onChange={(e) => setForm((c) => ({ ...c, descripcion: e.target.value }))} placeholder="Describe el requerimiento..." maxLength={500} />
+                <span>Descripción *</span>
+                <textarea
+                  name="descripcion"
+                  rows="4"
+                  value={form.descripcion}
+                  onChange={(e) => {
+                    setForm((c) => ({ ...c, descripcion: e.target.value }));
+                    if (descriptionError) setDescriptionError("");
+                  }}
+                  placeholder="Describe el requerimiento..."
+                  maxLength={500}
+                  aria-invalid={Boolean(descriptionError)}
+                  aria-describedby={descriptionError ? "descripcion-error" : undefined}
+                />
+                {descriptionError && <small id="descripcion-error" className="field-error" role="alert">{descriptionError}</small>}
                 <small className="form-helper">{form.descripcion.length}/500 caracteres</small>
               </label>
             </div>
-            {error && <p className="requests-form__error">{error}</p>}
+            {formError && <p className="requests-form__error" role="alert">{formError}</p>}
             <div className="requests-form__actions">
-              <button className="requests-form__cancel" type="button" onClick={() => setIsFormOpen(false)}>Cancelar</button>
-              <button className="requests-form__submit" type="submit">Registrar solicitud</button>
+              <button className="requests-form__cancel" type="button" onClick={() => setIsFormOpen(false)} disabled={saving}>Cancelar</button>
+              <button className="requests-form__submit" type="submit" disabled={saving}>{saving ? "Registrando…" : "Registrar solicitud"}</button>
             </div>
           </form>
         </section>
       )}
+
+      {actionMessage && <p className="role-message" role="status">{actionMessage}</p>}
 
       <section className="requests-page__toolbar panel">
         <div className="requests-page__search">
@@ -156,7 +191,7 @@ function Requests() {
             <p>Cargando solicitudes...</p>
           </div>
         ) : error ? (
-          <div className="requests-page__empty panel">
+          <div className="requests-page__empty panel" role="alert">
             <p>{error}</p>
             <button type="button" onClick={loadRequests}>Reintentar</button>
           </div>
@@ -171,7 +206,7 @@ function Requests() {
             <span className="requests-page__empty-icon"><Icon name="search" size={24} /></span>
             <h3>No encontramos solicitudes</h3>
             <p>Prueba con otro filtro o registra una nueva solicitud.</p>
-            <Link to="/requests" onClick={() => setIsFormOpen(true)}>Crear solicitud</Link>
+            <Link to="/requests" onClick={openForm}>Crear solicitud</Link>
           </div>
         )}
       </section>

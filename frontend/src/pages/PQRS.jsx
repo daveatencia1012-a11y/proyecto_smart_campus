@@ -22,15 +22,23 @@ function PQRS() {
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({ asunto: "", descripcion: "" });
   const items = data || [];
+
+  const updateField = (key, value) => {
+    setForm((current) => ({ ...current, [key]: value }));
+    if (fieldErrors[key]) setFieldErrors((current) => ({ ...current, [key]: "" }));
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setMessage("");
-    if (!form.asunto.trim() || !form.descripcion.trim()) {
-      setMessage("Escribe el asunto y la descripción de tu PQRS.");
-      return;
-    }
+    const missing = {
+      asunto: form.asunto.trim() ? "" : "El asunto es obligatorio.",
+      descripcion: form.descripcion.trim() ? "" : "La descripción es obligatoria.",
+    };
+    setFieldErrors(missing);
+    if (missing.asunto || missing.descripcion) return;
     setSaving(true);
     try {
       await saveRecord("pqrs", { ...form, asunto: form.asunto.trim(), descripcion: form.descripcion.trim() });
@@ -73,8 +81,18 @@ function PQRS() {
                 </button>
               ))}
             </div>
-            <label><span>Asunto</span><input maxLength={150} value={form.asunto} onChange={(e) => setForm((current) => ({ ...current, asunto: e.target.value }))} placeholder="Escribe un asunto claro" /></label>
-            <label><span>Descripción</span><textarea rows="6" value={form.descripcion} onChange={(e) => setForm((current) => ({ ...current, descripcion: e.target.value }))} placeholder="Cuéntanos los detalles..." /></label>
+            <label>
+              <span>Asunto *</span>
+              <input maxLength={150} value={form.asunto} onChange={(e) => updateField("asunto", e.target.value)} placeholder="Escribe un asunto claro"
+                aria-invalid={Boolean(fieldErrors.asunto)} aria-describedby={fieldErrors.asunto ? "pqrs-asunto-error" : undefined} />
+              {fieldErrors.asunto && <small id="pqrs-asunto-error" className="field-error" role="alert">{fieldErrors.asunto}</small>}
+            </label>
+            <label>
+              <span>Descripción *</span>
+              <textarea rows="6" value={form.descripcion} onChange={(e) => updateField("descripcion", e.target.value)} placeholder="Cuéntanos los detalles..."
+                aria-invalid={Boolean(fieldErrors.descripcion)} aria-describedby={fieldErrors.descripcion ? "pqrs-descripcion-error" : undefined} />
+              {fieldErrors.descripcion && <small id="pqrs-descripcion-error" className="field-error" role="alert">{fieldErrors.descripcion}</small>}
+            </label>
             <button className="pqrs-form__submit" type="submit" disabled={saving}>{saving ? "Enviando…" : "Enviar PQRS"} <Icon name="arrowRight" size={17} /></button>
             {sent && <p className="pqrs-form__success"><Icon name="checkCircle" size={17} /> PQRS registrada correctamente.</p>}
             {message && <p className="role-message" role="alert">{message}</p>}
@@ -83,8 +101,12 @@ function PQRS() {
 
         <aside className="panel pqrs-page__history">
           <div className="panel__header"><div><span className="panel__eyebrow">SEGUIMIENTO</span><h2>Mis PQRS</h2></div><span className="service-page__count">{items.length}</span></div>
-          {error && <p className="role-message" role="alert">{error}</p>}
-          {loading ? <p>Cargando…</p> : items.length ? (
+          {loading ? <p role="status">Cargando…</p> : error ? (
+            <div className="pqrs-history__empty" role="alert">
+              <p>{error}</p>
+              <button type="button" className="button button--secondary" onClick={reload}>Reintentar</button>
+            </div>
+          ) : items.length ? (
             <div className="pqrs-history">
               {items.map((item) => (
                 <div className="pqrs-history__item" key={item.id}>

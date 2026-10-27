@@ -22,6 +22,9 @@ function Reservations() {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -56,22 +59,36 @@ function Reservations() {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
-    setError("");
+    setFormError("");
+  };
+
+  const openForm = () => {
+    setFormError("");
+    setActionMessage("");
+    setIsFormOpen(true);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.recurso_id || !form.fecha || !form.hora_inicio || !form.hora_fin) {
-      setError("Completa todos los campos para registrar la reserva.");
+    if (saving) return;
+    const missing = [
+      !form.recurso_id && "recurso",
+      !form.fecha && "fecha",
+      !form.hora_inicio && "hora de inicio",
+      !form.hora_fin && "hora de finalización",
+    ].filter(Boolean);
+    if (missing.length) {
+      setFormError(`Completa los campos obligatorios: ${missing.join(", ")}.`);
       return;
     }
     if (form.hora_inicio >= form.hora_fin) {
-      setError("La hora de inicio debe ser menor que la hora de fin.");
+      setFormError("La hora de inicio debe ser menor que la hora de fin.");
       return;
     }
 
+    setSaving(true);
     try {
-      setError("");
+      setFormError("");
       await createReservation({
         recurso_id: Number(form.recurso_id),
         fecha: form.fecha,
@@ -80,20 +97,25 @@ function Reservations() {
       });
       setForm(emptyForm);
       setIsFormOpen(false);
+      setActionMessage("Reserva registrada correctamente.");
       loadData();
     } catch (err) {
-      setError(err.message || "Error al crear la reserva.");
+      if (!err.cancelled) setFormError(err.message || "Error al crear la reserva.");
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleCancel = async (id) => {
+    setActionMessage("");
     try {
       await cancelReservation(id);
       setReservations((current) =>
         current.map((r) => (r.id === id ? { ...r, status: "CANCELADA" } : r))
       );
+      setActionMessage("Reserva cancelada.");
     } catch (err) {
-      setError(err.message || "Error al cancelar la reserva.");
+      if (!err.cancelled) setActionMessage(err.message || "Error al cancelar la reserva.");
     }
   };
 
@@ -105,7 +127,7 @@ function Reservations() {
           <h1>Mis reservas</h1>
           <p>Gestiona salas, laboratorios, equipos y espacios académicos desde un solo lugar.</p>
         </div>
-        <button className="reservations-page__new-button" type="button" onClick={() => { setIsFormOpen((open) => !open); setError(""); }}>
+        <button className="reservations-page__new-button" type="button" onClick={() => (isFormOpen ? setIsFormOpen(false) : openForm())}>
           <Icon name="plus" size={18} />
           Nueva reserva
         </button>
@@ -146,14 +168,16 @@ function Reservations() {
                 <input type="time" name="hora_fin" value={form.hora_fin} onChange={handleChange} />
               </label>
             </div>
-            {error && <p className="reservations-form__error">{error}</p>}
+            {formError && <p className="reservations-form__error" role="alert">{formError}</p>}
             <div className="reservations-form__actions">
-              <button className="reservations-form__cancel" type="button" onClick={() => setIsFormOpen(false)}>Cancelar</button>
-              <button className="reservations-form__submit" type="submit">Confirmar reserva</button>
+              <button className="reservations-form__cancel" type="button" onClick={() => setIsFormOpen(false)} disabled={saving}>Cancelar</button>
+              <button className="reservations-form__submit" type="submit" disabled={saving}>{saving ? "Confirmando…" : "Confirmar reserva"}</button>
             </div>
           </form>
         </section>
       )}
+
+      {actionMessage && <p className="role-message" role="status">{actionMessage}</p>}
 
       <section className="reservations-page__toolbar panel">
         <div className="reservations-page__search">
@@ -181,7 +205,7 @@ function Reservations() {
         {loading ? (
           <div className="reservations-page__empty panel"><p>Cargando reservas...</p></div>
         ) : error ? (
-          <div className="reservations-page__empty panel">
+          <div className="reservations-page__empty panel" role="alert">
             <p>{error}</p>
             <button type="button" onClick={loadData}>Reintentar</button>
           </div>
@@ -196,7 +220,7 @@ function Reservations() {
             <Icon name="clock" size={18} />
             <h3>No encontramos reservas</h3>
             <p>Prueba con otro filtro o registra una nueva reserva.</p>
-            <button type="button" onClick={() => setIsFormOpen(true)}>Crear reserva</button>
+            <button type="button" onClick={openForm}>Crear reserva</button>
           </div>
         )}
       </section>

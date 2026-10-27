@@ -7,28 +7,44 @@ function ReservationDetail() {
   const { id } = useParams();
   const [reservation, setReservation] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     async function loadReservation() {
       try {
         setLoading(true);
-        setError("");
+        setError(null);
         const data = await getReservationById(id);
         setReservation(data);
       } catch (err) {
-        setError(err.message || "Error al cargar la reserva.");
+        setError({ status: err.status, message: err.message || "Error al cargar la reserva." });
       } finally {
         setLoading(false);
       }
     }
     loadReservation();
-  }, [id]);
+  }, [id, attempt]);
 
   if (loading) {
     return (
       <main className="reservation-detail">
         <p>Cargando reserva...</p>
+      </main>
+    );
+  }
+
+  // Un fallo de servidor o de conexión permite reintentar; un 4xx (404, id inválido) es "no encontrada".
+  if (error && (!error.status || error.status >= 500)) {
+    return (
+      <main className="reservation-detail">
+        <section className="reservation-detail__not-found panel" role="alert">
+          <Icon name="alert" size={24} />
+          <h1>No fue posible cargar la reserva</h1>
+          <p>{error.message}</p>
+          <button type="button" className="button button--secondary" onClick={() => setAttempt((value) => value + 1)}>Reintentar</button>
+          <Link to="/reservations">Volver a reservas</Link>
+        </section>
       </main>
     );
   }
@@ -39,7 +55,7 @@ function ReservationDetail() {
         <section className="reservation-detail__not-found panel">
           <Icon name="search" size={24} />
           <h1>Reserva no encontrada</h1>
-          <p>{error || "La reserva que buscas no existe o ya no está disponible."}</p>
+          <p>{error?.message || "La reserva que buscas no existe o ya no está disponible."}</p>
           <Link to="/reservations">Volver a reservas</Link>
         </section>
       </main>
