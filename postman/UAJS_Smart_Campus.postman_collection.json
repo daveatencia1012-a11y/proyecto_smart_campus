@@ -3281,7 +3281,7 @@
     },
     {
       "name": "06 · Recursos",
-      "description": "Casos T01–T07: listar, crear válido, crear sin nombre (400), estudiante sin permiso (403), consultar existente e inexistente (404), actualizar ubicación y dar de baja (204). No se consulta el recurso después de la baja (DEF-11).",
+      "description": "Casos T01–T07: listar, crear válido, crear sin nombre (400), estudiante sin permiso (403), consultar existente e inexistente (404), actualizar ubicación y dar de baja (204). Al final comprueba que el recurso dado de baja ya no se puede consultar (404, DEF-11).",
       "item": [
         {
           "name": "T01 · Listar recursos",
@@ -3589,6 +3589,37 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar recurso dado de baja → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/recursos/{{recursoCrudId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "recursos",
+                "{{recursoCrudId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// DEF-11: después de la baja lógica el recurso ya no se puede consultar.",
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Mensaje: Recurso no encontrado\", () => pm.expect(pm.response.json().error).to.include(\"Recurso no encontrado\"));"
                 ]
               }
             }

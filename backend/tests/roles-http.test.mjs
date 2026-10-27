@@ -143,6 +143,8 @@ describe('cuatro roles: HTTP real, gateway, seis servicios y MySQL', { skip:proc
     assert.equal((await call('DELETE',`/api/recursos/${row.data.id}`,'administrativo')).status,204);
     const [[stored]] = await stack.pools.resources.execute('SELECT * FROM recursos WHERE id = ?', [row.data.id]);
     assert.ok(stored.eliminado_en); assert.equal(stored.disponible,0);
+    const removed = await call('GET',`/api/recursos/${row.data.id}`,'administrativo');
+    assert.equal(removed.status,404); assert.equal(removed.data.error,'Recurso no encontrado');
     const list = await call('GET','/api/recursos','estudiante');
     assert.ok(!list.data.some(record => record.id === row.data.id));
   });
