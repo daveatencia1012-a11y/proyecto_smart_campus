@@ -54,6 +54,92 @@ function IconAction({ icon, label, tone = 'default', ...props }) {
   return <button type="button" className={`records-action records-action--${tone}`} aria-label={label} title={label} {...props}><Icon name={icon} size={16} /></button>;
 }
 
+// Detalle de un registro: secciones legibles en lugar de volcar el JSON crudo.
+const dateLabels = { fecha_creacion:'Creado', creado_en:'Creado', fecha_actualizacion:'Última actualización', actualizado_en:'Última actualización', eliminado_en:'Dado de baja' };
+const textLabels = { descripcion:'Descripción', respuesta:'Respuesta', motivo_cancelacion:'Motivo de cancelación' };
+const singular = { requests:'Solicitud', pqrs:'PQRS', resources:'Recurso', reservations:'Reserva', events:'Evento', users:'Usuario', services:'Servicio' };
+const hiddenKeys = ['id','codigo','estado','prioridad','historial','transiciones_permitidas','password_hash'];
+const formatDate = value => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' });
+};
+const humanize = key => labels[key] || capitalize(key.replaceAll('_', ' '));
+function parseHistory(value) {
+  if (Array.isArray(value)) return value;
+  try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+}
+
+function DetailModal({ kind, row, cell, personName, operational, onClose }) {
+  useEffect(() => {
+    const onKey = event => { if (event.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const keys = Object.keys(row);
+  const fields = keys.filter(key => !hiddenKeys.includes(key) && !dateLabels[key] && !textLabels[key] && (typeof row[key] !== 'object' || row[key] === null));
+  const texts = keys.filter(key => textLabels[key] && row[key]);
+  const dates = keys.filter(key => dateLabels[key] && row[key]);
+  const history = parseHistory(row.historial);
+  const title = row.codigo || row.nombre || row.asunto || `${singular[kind]} #${row.id}`;
+
+  return <div className="role-modal-backdrop records-detail__backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+    <section className="records-detail" role="dialog" aria-modal="true" aria-labelledby="records-detail-title">
+      <header className="records-detail__header">
+        <span className="records-view__icon records-detail__icon"><Icon name={kindIcons[kind]} size={22} /></span>
+        <div className="records-detail__heading">
+          <span className="panel__eyebrow">{titles[kind].toUpperCase()} · #{row.id}</span>
+          <h2 id="records-detail-title">{title}</h2>
+          <div className="records-detail__badges">
+            {row.estado && cell('estado', row)}
+            {row.prioridad && <>{cell('prioridad', row)}<small>prioridad</small></>}
+          </div>
+        </div>
+        <button type="button" className="records-action" onClick={onClose} aria-label="Cerrar" title="Cerrar"><Icon name="close" size={16} /></button>
+      </header>
+
+      <div className="records-detail__body">
+        {fields.length > 0 && <section className="records-detail__section">
+          <h3>Información</h3>
+          <dl className="records-detail__grid">
+            {fields.map(key => <div key={key}><dt>{humanize(key)}</dt><dd>{key === 'usuario_id' || key === 'creado_por' ? personName(row[key], row, false) : cell(key, row)}</dd></div>)}
+          </dl>
+        </section>}
+
+        {texts.map(key => <section key={key} className="records-detail__section">
+          <h3>{textLabels[key]}</h3>
+          <p className="records-detail__text">{row[key]}</p>
+        </section>)}
+
+        {history.length > 0 && <section className="records-detail__section">
+          <h3>Historial de estados</h3>
+          <ol className="records-timeline">
+            {[...history].reverse().map((entry, index) => <li key={`${entry.fecha}-${index}`} className={`records-timeline__item records-timeline__item--${toneOf(entry.estado)}`}>
+              <span className="records-timeline__dot" aria-hidden="true" />
+              <div>
+                <strong>{entry.anterior ? <>{capitalize(display('estado', entry.anterior))} <Icon name="arrowRight" size={13} /> {capitalize(display('estado', entry.estado))}</> : `Solicitud ${capitalize(display('estado', entry.estado)).toLowerCase()}`}</strong>
+                <small>{formatDate(entry.fecha)} · {personName(entry.actor_id, row)}</small>
+              </div>
+            </li>)}
+          </ol>
+        </section>}
+
+        {dates.length > 0 && <section className="records-detail__section">
+          <h3>Fechas</h3>
+          <dl className="records-detail__grid">
+            {dates.map(key => <div key={key}><dt>{dateLabels[key]}</dt><dd>{formatDate(row[key])}</dd></div>)}
+          </dl>
+        </section>}
+      </div>
+
+      <footer className="records-detail__footer">
+        {['requests','reservations'].includes(kind) && <Link className="button button--secondary" to={`/${kind}/${row.id}`} state={{ from: operational ? window.location.pathname : null }}><Icon name="arrowUpRight" size={16} /> Abrir detalle completo</Link>}
+        <button type="button" className="button button--primary" onClick={onClose}>Cerrar</button>
+      </footer>
+    </section>
+  </div>;
+}
+
 export default function RecordsPage({ kind, operational = false }) {
   const { user, role } = useSession();
   const [filters, setFilters] = useState({});
@@ -139,6 +225,16 @@ export default function RecordsPage({ kind, operational = false }) {
     try { await fn(); setMessage('Operación completada.'); await reload(); }
     catch (err) { if (!err.cancelled) setMessage(err.message); }
     finally { setSaving(false); }
+  }
+  const closeDetail = useCallback(() => setDetail(null), []);
+  // Nombre de una persona por id: "Tú", un responsable conocido, el solicitante o "Usuario #n".
+  function personName(id, row, asActor = true) {
+    if (!id) return 'Sistema';
+    if (id === user?.id) return 'Tú';
+    const person = aux.responsables.find(item => item.id === id);
+    if (person) return person.nombre;
+    if (asActor && id === row.usuario_id) return 'Solicitante';
+    return `Usuario #${id}`;
   }
   const visibleColumns = columns[kind].filter(key => operational || key !== 'usuario_id');
   const dateFilters = ['requests','pqrs','reservations'].includes(kind);
@@ -250,6 +346,6 @@ export default function RecordsPage({ kind, operational = false }) {
       })}
       {message && <p role="alert">{message}</p>}<div className="role-actions"><button type="button" className="button button--secondary" onClick={() => setEditor(null)} disabled={saving}>Cerrar</button><button className="button button--primary" disabled={saving}>{saving ? 'Guardando…' : 'Guardar'}</button></div>
     </form></div>}
-    {detail && <div className="role-modal-backdrop"><section className="role-modal panel" role="dialog" aria-modal="true" aria-label="Detalle"><h2>Registro #{detail.id}</h2><dl>{Object.entries(detail).filter(([key]) => key !== 'transiciones_permitidas').map(([key,value]) => <div key={key}><dt>{labels[key] || key}</dt><dd>{typeof value === 'object' ? JSON.stringify(value) : display(key,value)}</dd></div>)}</dl><button className="button button--secondary" onClick={() => setDetail(null)}>Cerrar</button></section></div>}
+    {detail && <DetailModal kind={kind} row={detail} cell={cell} personName={personName} operational={operational} onClose={closeDetail} />}
   </section>;
 }

@@ -9526,3 +9526,46 @@ input[aria-invalid="true"] {
 @media (prefers-reduced-motion: reduce) {
   .records-table__skeleton td span { animation:none; }
 }
+
+/* Gestión operativa: detalle de un registro */
+.records-detail__backdrop { animation:records-fade 160ms ease-out; }
+.records-detail { display:flex; flex-direction:column; width:min(720px, 100%); max-height:min(88vh, 860px); overflow:hidden; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface-solid); color:var(--text); box-shadow:var(--shadow-lg); animation:records-pop 200ms cubic-bezier(0.22, 1, 0.36, 1); }
+.records-detail__header { display:flex; align-items:flex-start; gap:14px; padding:22px 24px 18px; border-bottom:1px solid var(--border); background:linear-gradient(140deg, var(--primary-soft), var(--surface-solid) 60%); }
+.records-detail .records-detail__icon { margin-top:2px; }
+.records-detail__heading { flex:1; min-width:0; }
+.records-detail .records-detail__heading h2 { margin:2px 0 8px; color:var(--text); font-size:22px; overflow-wrap:anywhere; }
+.records-detail__badges { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.records-detail__badges small { margin-left:-4px; color:var(--text-muted); font-size:11px; }
+.records-detail__body { display:grid; gap:4px; padding:6px 24px; overflow-y:auto; }
+.records-detail__section { padding:16px 0; border-bottom:1px solid var(--border); }
+.records-detail__section:last-child { border-bottom:0; }
+.records-detail .records-detail__section h3 { margin:0 0 12px; color:var(--text-muted); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; }
+.records-detail .records-detail__grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px 20px; margin:0; }
+.records-detail .records-detail__grid dt { margin:0 0 4px; color:var(--text-muted); font-size:12px; font-weight:700; }
+.records-detail .records-detail__grid dd { margin:0; color:var(--text); font-size:14px; font-weight:600; overflow-wrap:anywhere; }
+.records-detail .records-detail__text { margin:0; padding:12px 14px; border-radius:var(--radius-sm); background:var(--surface-soft); color:var(--text); font-size:14px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
+
+.records-timeline { position:relative; display:grid; gap:16px; margin:0; padding:0 0 0 4px; list-style:none; }
+.records-timeline::before { content:""; position:absolute; top:8px; bottom:8px; left:10px; width:2px; border-radius:2px; background:var(--border-strong); }
+.records-timeline__item { position:relative; display:flex; align-items:flex-start; gap:14px; --dot:var(--accent); }
+.records-timeline__item--success { --dot:var(--success); }
+.records-timeline__item--warning { --dot:var(--warning); }
+.records-timeline__item--danger { --dot:var(--danger); }
+.records-timeline__dot { position:relative; z-index:1; flex:none; width:14px; height:14px; margin-top:3px; border:3px solid var(--surface-solid); border-radius:50%; background:var(--dot); box-shadow:0 0 0 2px color-mix(in srgb, var(--dot) 35%, transparent); }
+.records-timeline__item:first-child .records-timeline__dot { box-shadow:0 0 0 4px color-mix(in srgb, var(--dot) 25%, transparent); }
+.records-timeline__item strong { display:flex; align-items:center; gap:6px; flex-wrap:wrap; color:var(--text); font-size:14px; }
+.records-timeline__item small { display:block; margin-top:2px; color:var(--text-muted); font-size:12px; }
+
+.records-detail__footer { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; padding:14px 24px; border-top:1px solid var(--border); background:var(--surface-soft); }
+.records-detail__footer .button { display:inline-flex; align-items:center; gap:7px; text-decoration:none; }
+
+@keyframes records-fade { from { opacity:0; } }
+@keyframes records-pop { from { opacity:0; transform:translateY(10px) scale(0.98); } }
+@media (max-width: 600px) {
+  .records-detail .records-detail__grid { grid-template-columns:1fr; }
+  .records-detail__header, .records-detail__body, .records-detail__footer { padding-left:16px; padding-right:16px; }
+  .records-detail__footer .button { flex:1; justify-content:center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .records-detail, .records-detail__backdrop { animation:none; }
+}
