@@ -16,7 +16,8 @@ function RequestDetail() {
   const staff = STAFF.includes(role);
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
+  const [attempt, setAttempt] = useState(0);
   const [responsables, setResponsables] = useState([]);
   const [selected, setSelected] = useState("");
   const [message, setMessage] = useState("");
@@ -27,7 +28,7 @@ function RequestDetail() {
   const backLabel = backTo.startsWith("/gestion") || backTo.startsWith("/admin") ? "Volver a atender solicitudes" : "Volver a solicitudes";
 
   const applyRequest = (data) => {
-    setError("");
+    setError(null);
     setRequest(data);
     setSelected(data.responsibleId ? String(data.responsibleId) : "");
   };
@@ -38,10 +39,10 @@ function RequestDetail() {
     let active = true;
     getRequestById(id)
       .then((data) => { if (active) applyRequest(data); })
-      .catch((err) => { if (active && !err.cancelled) setError(err.message || "Error al cargar la solicitud."); })
+      .catch((err) => { if (active && !err.cancelled) setError({ status: err.status, message: err.message || "Error al cargar la solicitud." }); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [id]);
+  }, [id, attempt]);
 
   useEffect(() => {
     if (!staff) return undefined;
@@ -82,13 +83,28 @@ function RequestDetail() {
     );
   }
 
+  // Un fallo de servidor o de conexión permite reintentar; un 4xx (404, id inválido) es "no encontrada".
+  if (error && (!error.status || error.status >= 500)) {
+    return (
+      <main className="request-detail">
+        <section className="request-detail__not-found panel" role="alert">
+          <Icon name="alert" size={24} />
+          <h1>No fue posible cargar la solicitud</h1>
+          <p>{error.message}</p>
+          <button type="button" className="button button--secondary" onClick={() => { setLoading(true); setAttempt((value) => value + 1); }}>Reintentar</button>
+          <Link to={backTo}>{backLabel}</Link>
+        </section>
+      </main>
+    );
+  }
+
   if (error || !request) {
     return (
       <main className="request-detail">
         <section className="request-detail__not-found panel">
           <Icon name="search" size={24} />
           <h1>Solicitud no encontrada</h1>
-          <p>{error || "La solicitud que intentas consultar no existe."}</p>
+          <p>{error?.message || "La solicitud que intentas consultar no existe."}</p>
           <Link to={backTo}>{backLabel}</Link>
         </section>
       </main>

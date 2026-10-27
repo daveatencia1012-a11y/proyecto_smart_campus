@@ -22,7 +22,7 @@ function iconFor(type = "") {
 
 function Resources() {
   const { role } = useSession();
-  const { data, loading, error } = useResource(loadResources);
+  const { data, loading, error, reload } = useResource(loadResources);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("TODOS");
 
@@ -65,14 +65,17 @@ function Resources() {
         </div>
       </section>
 
-      {error && <p className="role-message" role="alert">{error}</p>}
-
       <section className="service-page__section">
         <div className="service-page__section-heading">
           <div><span className="panel__eyebrow">CATÁLOGO</span><h2>Recursos universitarios</h2></div>
           <span className="service-page__count">{filtered.length}</span>
         </div>
-        {loading ? <p>Cargando recursos…</p> : !filtered.length ? <p className="role-empty panel">No hay recursos para mostrar.</p> : (
+        {loading ? <p role="status">Cargando recursos…</p> : error ? (
+          <div className="role-empty panel" role="alert">
+            <p>{error}</p>
+            <button type="button" className="button button--secondary" onClick={reload}>Reintentar</button>
+          </div>
+        ) : !filtered.length ? <p className="role-empty panel">No hay recursos para mostrar.</p> : (
           <div className="resources-page__grid">
             {filtered.map((resource) => {
               const reservable = resource.estado === "disponible" && Boolean(resource.disponible);

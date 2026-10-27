@@ -134,8 +134,8 @@ export default function RecordsPage({ kind, operational = false }) {
       {kind === 'users' && <label>Buscar usuario<input type="search" value={filters.q || ''} onChange={e => setFilters({ q:e.target.value })}/></label>}
       <span>{data?.length ?? 0} registros</span>
     </div>
-    {(error || message) && <p role="status" className="role-message">{error || message}</p>}
-    {loading ? <p role="status">Cargando…</p> : <div className="panel role-table-wrap"><table className="role-table"><thead><tr>{visibleColumns.map(key => <th key={key}>{labels[key]}</th>)}<th>Acciones</th></tr></thead><tbody>
+    {message && !editor && <p role="status" className="role-message">{message}</p>}
+    {loading ? <p role="status">Cargando…</p> : error ? <div className="panel role-empty" role="alert"><p>{error}</p><button className="button button--secondary" onClick={reload}>Reintentar</button></div> : <div className="panel role-table-wrap"><table className="role-table"><thead><tr>{visibleColumns.map(key => <th key={key}>{labels[key]}</th>)}<th>Acciones</th></tr></thead><tbody>
       {(data || []).map(row => {
         const editable = kind === 'events' ? canEditEvent(user, row) : operational && staff && ['requests','pqrs','resources','reservations'].includes(kind) || admin && ['users','services'].includes(kind);
         const removable = kind === 'resources' ? operational && staff : admin && ['users','services','events'].includes(kind);
