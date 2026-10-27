@@ -188,6 +188,8 @@ function Dashboard() {
       : `Tienes ${plural(openRequests.length, "solicitud en curso", "solicitudes en curso")}, ${plural(upcomingReservations.length, "reserva próxima", "reservas próximas")} y ${plural(Number(data.notificaciones_no_leidas || 0), "aviso sin leer", "avisos sin leer")}.`;
 
   const [eyebrow, title] = heroByRole[role] || heroByRole.estudiante;
+  // El título se muestra en dos tonos: "Todo el campus," / "bajo control."
+  const [titleStart, titleEnd] = title.split(/,\s*/);
   const firstName = (user?.nombre || "").split(" ")[0];
   const workList = (staff ? openRequests : requestList).slice(0, 4);
 
@@ -196,7 +198,7 @@ function Dashboard() {
       <section className="dashboard__hero">
         <div className="dashboard__hero-copy">
           <span className="dashboard__eyebrow">{eyebrow}</span>
-          <h1>{title}</h1>
+          <h1>{titleEnd ? <>{titleStart}, <span className="dashboard__hero-accent">{titleEnd}</span></> : title}</h1>
           <p>{greeting()}{firstName ? `, ${firstName}` : ""}. {summary}</p>
         </div>
 

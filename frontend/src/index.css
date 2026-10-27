@@ -9663,3 +9663,10 @@ input[aria-invalid="true"] {
 @media (prefers-reduced-motion: reduce) {
   .calendar-view__loading .ui-icon { animation:none; }
 }
+
+/* Tarjeta principal del Dashboard: tipografía de marca y título en dos tonos */
+:root { --font-brand:"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif; }
+.dashboard__hero .dashboard__hero-copy h1 { margin-bottom:12px; color:var(--primary); font-family:var(--font-brand); font-size:clamp(30px, 3.1vw, 46px); font-weight:800; letter-spacing:-0.02em; line-height:1.1; text-wrap:balance; }
+.dashboard__hero .dashboard__hero-accent { color:var(--accent); }
+.dashboard__hero .dashboard__eyebrow { font-family:var(--font-brand); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.16em; }
+:root[data-theme="dark"] .dashboard__hero .dashboard__hero-copy h1 { color:var(--text); }
