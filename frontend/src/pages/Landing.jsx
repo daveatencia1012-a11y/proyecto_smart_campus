@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Icon from "../components/Icon/Icon";
 import uajsLogo from "../assets/uajs-logo.png";
 import useSession from '../hooks/useSession';
@@ -50,9 +50,14 @@ const highlights = [
   "Información organizada y notificaciones en un solo lugar",
 ];
 
+const REDIRECT_SECONDS = 5;
+
 function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isAuthenticated, role } = useSession();
+  const navigate = useNavigate();
+  const [secondsLeft, setSecondsLeft] = useState(REDIRECT_SECONDS);
+  const [redirectCancelled, setRedirectCancelled] = useState(false);
 
   useEffect(() => {
     const revealObserver = new IntersectionObserver(
@@ -79,6 +84,21 @@ function Landing() {
   }, []);
 
   const campusPath = isAuthenticated ? homeForRole(role) : '/login';
+
+  // Redirección automática a la página principal: solo si el usuario no actúa.
+  useEffect(() => {
+    if (redirectCancelled) return undefined;
+    const cancel = () => setRedirectCancelled(true);
+    const interactions = ["pointerdown", "keydown", "wheel", "touchstart"];
+    interactions.forEach((name) => window.addEventListener(name, cancel, { passive: true }));
+    const tick = window.setInterval(() => setSecondsLeft((value) => Math.max(value - 1, 0)), 1000);
+    const redirect = window.setTimeout(() => navigate(campusPath, { replace: true }), REDIRECT_SECONDS * 1000);
+    return () => {
+      interactions.forEach((name) => window.removeEventListener(name, cancel));
+      window.clearInterval(tick);
+      window.clearTimeout(redirect);
+    };
+  }, [redirectCancelled, campusPath, navigate]);
 
   return (
     <main className="landing">
@@ -395,6 +415,17 @@ function Landing() {
           </div>
         </div>
       </footer>
+
+      {!redirectCancelled && (
+        <div className="landing-redirect" role="status" aria-live="polite">
+          <span className="landing-redirect__text">
+            Te llevamos al campus en <strong>{secondsLeft}</strong>
+          </span>
+          <button className="landing-redirect__cancel" type="button" onClick={() => setRedirectCancelled(true)}>
+            Cancelar
+          </button>
+        </div>
+      )}
     </main>
   );
 }
