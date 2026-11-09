@@ -71,6 +71,10 @@ export async function update(req, res, next) {
       return res.status(403).json({ error: 'No puedes modificar tu rol ni tu estado' });
     }
 
+    if (req.user.id === Number(id) && (rol !== undefined || activo !== undefined)) {
+      return res.status(403).json({ error: 'No puedes modificar tu propio rol ni tu propio estado' });
+    }
+
     if (rol !== undefined && !ROLES.includes(rol)) {
       return res.status(400).json({ error: 'rol inválido' });
     }
@@ -123,6 +127,10 @@ export async function remove(req, res, next) {
   try {
     const { id } = req.params;
     validateId(id);
+
+    if (req.user.id === Number(id)) {
+      return res.status(403).json({ error: 'No puedes desactivar tu propia cuenta' });
+    }
 
     const current = await User.findById(id);
     if (!current) {
