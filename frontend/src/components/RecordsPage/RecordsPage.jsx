@@ -180,7 +180,7 @@ export default function RecordsPage({ kind, operational = false }) {
     if (editor.mode === 'edit' && kind === 'reservations') return ['fecha','hora_inicio','hora_fin'];
     const fields = [...createFields[kind]];
     if (editor.mode === 'edit' && ['services'].includes(kind)) return fields.filter(key => key !== 'codigo');
-    if (editor.mode === 'edit' && kind === 'users') return [...fields, 'activo'];
+    if (editor.mode === 'edit' && kind === 'users') return [...fields, 'activo'].filter(key => !(editor.row?.id === user.id && ['rol', 'activo'].includes(key)));
     if (editor.mode === 'edit' && kind === 'requests') return [...fields, 'responsable_id'];
     return fields;
   }
@@ -328,7 +328,7 @@ export default function RecordsPage({ kind, operational = false }) {
                   {['requests','reservations'].includes(kind) && <Link className="records-action" to={`/${kind}/${row.id}`} state={{ from: operational ? window.location.pathname : null }} aria-label="Abrir detalle" title="Abrir detalle"><Icon name="arrowUpRight" size={16} /></Link>}
                   {editable && !(kind === 'reservations' && row.estado === 'cancelada') && <IconAction icon="edit" label="Editar" disabled={saving} onClick={() => open('edit', row)} />}
                   {kind === 'reservations' && operational && row.estado !== 'cancelada' && <IconAction icon="close" label="Cancelar reserva" tone="danger" disabled={saving} onClick={() => action(() => cancelReservation(row.id), '¿Cancelar esta reserva?')} />}
-                  {removable && (kind !== 'users' || row.activo) && <IconAction icon="trash" label={kind === 'users' ? 'Desactivar' : 'Dar de baja'} tone="danger" disabled={saving} onClick={() => action(async () => { await deleteRecord(kind, row.id); if (kind === 'users' && row.id === user.id) { clearSession(); window.location.href = '/login'; } }, '¿Dar de baja este registro?')} />}
+                  {removable && (kind !== 'users' || row.activo) && !(kind === 'users' && row.id === user.id) && <IconAction icon="trash" label={kind === 'users' ? 'Desactivar' : 'Dar de baja'} tone="danger" disabled={saving} onClick={() => action(() => deleteRecord(kind, row.id), '¿Dar de baja este registro?')} />}
                   {kind === 'users' && !row.activo && <IconAction icon="refresh" label="Reactivar" tone="success" disabled={saving} onClick={() => action(() => reactivateUser(row.id))} />}
                 </div></td>
               </tr>;

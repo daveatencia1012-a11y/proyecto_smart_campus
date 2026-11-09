@@ -168,14 +168,19 @@ describe('cuatro roles: HTTP real, gateway, seis servicios y MySQL', { skip:proc
     assert.equal((await call('POST','/api/notificaciones','administrador',{ usuario_id:2,titulo:'No',mensaje:'No',tipo:'sistema' })).status,403);
   });
 
-  it('usuarios: solo administrador registra y no puede eliminar al último administrador', async () => {
+  it('usuarios: solo administrador registra y nadie se desactiva ni se cambia de rol a sí mismo', async () => {
     for (const role of roles) {
       const created = await call('POST','/api/auth/register',role,{ nombre:'Nueva cuenta',email:`cuenta-${++sequence}@example.test`,password:'Strong-password-test',rol:'estudiante' });
       assert.equal(created.status,role === 'administrador' ? 201 : 403);
     }
     const id = stack.accounts.administrador.id;
-    assert.equal((await call('DELETE',`/api/usuarios/${id}`,'administrador')).status,409);
-    assert.equal((await call('PUT',`/api/usuarios/${id}`,'administrador',{ rol:'docente' })).status,409);
+    assert.equal((await call('DELETE',`/api/usuarios/${id}`,'administrador')).status,403);
+    assert.equal((await call('PUT',`/api/usuarios/${id}`,'administrador',{ rol:'docente' })).status,403);
+    assert.equal((await call('PUT',`/api/usuarios/${id}`,'administrador',{ activo:false })).status,403);
+    const other = await call('POST','/api/auth/register','administrador',{ nombre:'Cuenta ajena',email:`cuenta-${++sequence}@example.test`,password:'Strong-password-test',rol:'administrativo' });
+    assert.equal(other.status,201);
+    assert.equal((await call('DELETE',`/api/usuarios/${other.data.usuario.id}`,'administrador')).status,200);
+    assert.equal((await call('PUT',`/api/usuarios/${other.data.usuario.id}`,'administrador',{ activo:true })).status,200);
     assert.equal((await call('PUT',`/api/usuarios/${stack.accounts.estudiante.id}`,'estudiante',{ rol:'administrador' })).status,403);
     assert.equal((await call('PUT',`/api/usuarios/${stack.accounts.estudiante.id}`,'estudiante',{ nombre:{ rol:'administrador' } })).status,400);
   });
