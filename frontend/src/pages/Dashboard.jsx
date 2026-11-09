@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/Icon/Icon";
 import useSession from "../hooks/useSession";
@@ -30,6 +30,23 @@ const actionsByRole = {
 
 const toneByType = { solicitud: "requests", reserva: "reservations", evento: "events", pqrs: "pqrs", sistema: "notifications" };
 const iconByType = { solicitud: "requests", reserva: "reservations", evento: "events", pqrs: "pqrs", sistema: "alert" };
+
+const searchSections = [
+  { icon: "services", label: "Servicios", to: "/services", keywords: "catalogo universitario" },
+  { icon: "requests", label: "Solicitudes", to: "/requests", keywords: "tramites solicitar" },
+  { icon: "reservations", label: "Reservas", to: "/reservations", keywords: "salas laboratorios espacios" },
+  { icon: "events", label: "Eventos", to: "/events", keywords: "actividades conferencias talleres" },
+  { icon: "calendar", label: "Calendario", to: "/calendar", keywords: "fechas agenda" },
+  { icon: "notifications", label: "Notificaciones", to: "/notifications", keywords: "avisos alertas mensajes" },
+  { icon: "resources", label: "Recursos", to: "/resources", keywords: "equipos inventario" },
+  { icon: "pqrs", label: "PQRS", to: "/pqrs", keywords: "peticiones quejas reclamos sugerencias" },
+];
+
+const normalize = (text = "") => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+// Destino funcional de cada servicio del catálogo (mismo mapa que ServiceDetail).
+const serviceRoutes = { solicitudes: "/requests", reservas: "/reservations", recursos: "/resources", eventos: "/events", notificaciones: "/notifications", pqrs: "/pqrs" };
+const tones = new Set(["requests", "reservations", "events", "pqrs", "notifications", "resources"]);
 
 const loadServices = () => listRecords("services");
 const loadActivity = () => listNotifications();
@@ -127,6 +144,17 @@ function Dashboard() {
   const staff = STAFF.includes(role);
   const admin = role === "administrador";
   const [period, setPeriod] = useState("Este mes");
+  const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    const close = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) setSearchOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
 
   const loadMetrics = useCallback(
     () => get(staff ? `/api/dashboard/operativo?${query(rangeFor(period))}` : "/api/dashboard/personal"),
@@ -145,6 +173,37 @@ function Dashboard() {
   const activity = useResource(loadActivity);
   const services = useResource(loadServices);
   const health = useResource(admin ? loadHealth : loadNothing);
+
+  const searchResults = useMemo(() => {
+    const term = normalize(search.trim());
+    if (!term) return [];
+    const merged = new Map();
+    const add = (item) => {
+      const id = normalize(item.label);
+      const existing = merged.get(id);
+      if (existing) {
+        existing.text = `${existing.text} ${item.text}`;
+        existing.description = existing.description || item.description;
+        return;
+      }
+      merged.set(id, item);
+    };
+    searchSections.forEach((item) => add({ key: `seccion-${item.to}`, label: item.label, icon: item.icon, to: item.to, text: `${item.label} ${item.keywords}` }));
+    (services.data || []).forEach((service) => add({
+      key: `servicio-${service.id}`,
+      label: service.nombre,
+      icon: service.icono,
+      to: serviceRoutes[service.codigo] || `/services/${service.id}`,
+      text: `${service.nombre} ${service.descripcion} ${service.codigo}`,
+      description: service.descripcion,
+    }));
+    return [...merged.values()].filter((item) => normalize(item.text).includes(term)).slice(0, 8);
+  }, [search, services.data]);
+
+  const closeSearch = () => {
+    setSearch("");
+    setSearchOpen(false);
+  };
 
   const data = metrics.data || {};
   const requestList = requests.data || [];
@@ -210,6 +269,55 @@ function Dashboard() {
           ))}
         </div>
       </section>
+
+      <div className="dash-search" ref={searchRef}>
+        <Icon name="search" size={18} />
+        <input
+          type="search"
+          placeholder="Buscar servicios o información..."
+          aria-label="Buscar servicios o información"
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setSearchOpen(true);
+          }}
+          onFocus={() => setSearchOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") closeSearch();
+          }}
+        />
+        {search && (
+          <button className="dash-search__clear" type="button" aria-label="Limpiar búsqueda" onClick={closeSearch}>
+            <Icon name="close" size={13} />
+          </button>
+        )}
+
+        {searchOpen && search.trim() && (
+          <div className="dash-search__results">
+            {searchResults.length ? (
+              <>
+                <span className="dash-search__group">RESULTADOS</span>
+                {searchResults.map((item) => (
+                  <Link
+                    key={item.key}
+                    className={`dash-search__result${tones.has(item.icon) ? ` dash-tone--${item.icon}` : ""}`}
+                    to={item.to}
+                    onClick={closeSearch}
+                  >
+                    <span className="dash-search__icon"><Icon name={item.icon} size={16} /></span>
+                    <span>
+                      <strong>{item.label}</strong>
+                      {item.description && <small>{item.description}</small>}
+                    </span>
+                  </Link>
+                ))}
+              </>
+            ) : (
+              <p className="dash-search__empty">Sin resultados para "{search.trim()}".</p>
+            )}
+          </div>
+        )}
+      </div>
 
       <section className="dash-toolbar">
         <div>
