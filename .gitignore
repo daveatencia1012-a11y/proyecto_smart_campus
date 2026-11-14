@@ -46,5 +46,13 @@ docker-compose.override.yml
 # Misc
 .cache/
 
+# Claves privadas / certificados
+*.pem
+*.key
+id_rsa*
+
+UAJS-Joseph.pem
+
+
 .kilo
 .kilo/*
